@@ -80,78 +80,74 @@
 		}
 	}
 
-	type ToolbarButton = { command: string; label: string; icon: string };
+	type ToolbarButton = { command: string; label: string; icon: string; materialIcon?: string };
 	type ToolbarGroup = ToolbarButton[];
 
 	const groups: ToolbarGroup[] = [
 		[
-			{ command: 'bold', label: 'Bold', icon: 'B' },
-			{ command: 'italic', label: 'Italic', icon: 'I' },
-			{ command: 'underline', label: 'Underline', icon: 'U' },
-			{ command: 'strike', label: 'Strikethrough', icon: 'S' },
-			{ command: 'highlight', label: 'Highlight', icon: 'H' }
+			{ command: 'bold', label: 'Bold', icon: 'B', materialIcon: 'format_bold' },
+			{ command: 'italic', label: 'Italic', icon: 'I', materialIcon: 'format_italic' },
+			{ command: 'underline', label: 'Underline', icon: 'U', materialIcon: 'format_underlined' },
+			{ command: 'strike', label: 'Strikethrough', icon: 'S', materialIcon: 'format_strikethrough' },
+			{ command: 'highlight', label: 'Highlight', icon: 'H', materialIcon: 'format_ink_highlighter' }
 		],
 		[
-			{ command: 'h1', label: 'Heading 1', icon: 'H1' },
-			{ command: 'h2', label: 'Heading 2', icon: 'H2' },
-			{ command: 'h3', label: 'Heading 3', icon: 'H3' }
+			{ command: 'h1', label: 'Heading 1', icon: 'H1', materialIcon: 'format_h1' },
+			{ command: 'h2', label: 'Heading 2', icon: 'H2', materialIcon: 'format_h2' },
+			{ command: 'h3', label: 'Heading 3', icon: 'H3', materialIcon: 'format_h3' }
 		],
 		[
-			{ command: 'bulletList', label: 'Bullet List', icon: '•' },
-			{ command: 'orderedList', label: 'Ordered List', icon: '1.' },
-			{ command: 'blockquote', label: 'Blockquote', icon: '"' }
+			{ command: 'bulletList', label: 'Bullet List', icon: '•', materialIcon: 'format_list_bulleted' },
+			{ command: 'orderedList', label: 'Ordered List', icon: '1.', materialIcon: 'format_list_numbered' },
+			{ command: 'blockquote', label: 'Blockquote', icon: '"', materialIcon: 'format_quote' }
 		],
 		[
-			{ command: 'alignLeft', label: 'Align Left', icon: '⫷' },
-			{ command: 'alignCenter', label: 'Align Center', icon: '⫿' },
-			{ command: 'alignRight', label: 'Align Right', icon: '⫸' }
+			{ command: 'alignLeft', label: 'Align Left', icon: '⫷', materialIcon: 'format_align_left' },
+			{ command: 'alignCenter', label: 'Align Center', icon: '⫿', materialIcon: 'format_align_center' },
+			{ command: 'alignRight', label: 'Align Right', icon: '⫸', materialIcon: 'format_align_right' }
 		]
 	];
 </script>
 
-<div class="toolbar flex items-center gap-1 border-b border-base-300 bg-base-200 px-3 py-1.5">
+<div class="toolbar flex items-center gap-0.5 border-b border-base-300 bg-base-200 px-3 py-1">
 	<input
 		type="text"
-		class="input input-ghost input-sm mr-3 w-48 font-semibold"
+		class="input input-ghost input-sm mr-2 w-44 font-semibold"
 		value={title}
 		oninput={(e) => onupdatetitle(e.currentTarget.value)}
 		aria-label="Story title"
 	/>
 
-	<div class="divider divider-horizontal mx-0.5"></div>
+	<div class="mx-1.5 h-5 w-px bg-base-300"></div>
 
 	{#each groups as group, gi (gi)}
 		{#if gi > 0}
-			<div class="divider divider-horizontal mx-0.5"></div>
+			<div class="mx-1.5 h-5 w-px bg-base-300"></div>
 		{/if}
 		{#each group as btn (btn.command)}
 			<button
-				class="btn btn-ghost btn-xs"
+				class="btn btn-ghost btn-xs min-h-0 h-7 w-7 p-0"
 				class:btn-active={isActive(btn.command)}
 				title={btn.label}
 				onclick={() => toggleFormat(btn.command)}
 			>
-				<span class="text-xs font-bold" class:italic={btn.command === 'italic'} class:underline={btn.command === 'underline'} class:line-through={btn.command === 'strike'}>
-					{btn.icon}
-				</span>
+				{#if btn.materialIcon}
+					<span class="material-symbols-outlined" style="font-size: 18px;">{btn.materialIcon}</span>
+				{:else}
+					<span class="text-xs font-bold">{btn.icon}</span>
+				{/if}
 			</button>
 		{/each}
 	{/each}
 
-	<div class="divider divider-horizontal mx-0.5"></div>
+	<div class="mx-1.5 h-5 w-px bg-base-300"></div>
 
 	<button
 		class="btn btn-primary btn-xs gap-1"
 		title="Create new branch (splits at current paragraph)"
 		onclick={onbranch}
 	>
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="h-3.5 w-3.5">
-			<path
-				fill-rule="evenodd"
-				d="M4.75 2a.75.75 0 0 1 .75.75v2.5a.75.75 0 0 1-1.5 0v-2.5A.75.75 0 0 1 4.75 2Zm0 9a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM2 12.5a2.75 2.75 0 1 1 3.5 2.635V15a.75.75 0 0 1-1.5 0v.135A2.751 2.751 0 0 1 2 12.5Zm9.75-1.5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3ZM8.5 12.5a3.251 3.251 0 0 1 2.75-3.213V7.5A1.75 1.75 0 0 0 9.5 5.75h-1a.75.75 0 0 1 0-1.5h1A3.25 3.25 0 0 1 12.75 7.5v1.787A3.251 3.251 0 0 1 11.75 16a3.25 3.25 0 0 1-3.25-3.5Z"
-				clip-rule="evenodd"
-			/>
-		</svg>
+		<span class="material-symbols-outlined" style="font-size: 16px;">arrow_split</span>
 		Branch
 	</button>
 
