@@ -188,6 +188,10 @@ export function exportToTwee(tree: StoryTree): string {
 	return parts.join('\n\n\n');
 }
 
+function storyFilename(title: string): string {
+	return title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'story';
+}
+
 /**
  * Triggers a browser download of the story as a .twee file.
  */
@@ -197,7 +201,21 @@ export function downloadTwee(tree: StoryTree): void {
 	const url = URL.createObjectURL(blob);
 	const a = document.createElement('a');
 	a.href = url;
-	a.download = `${tree.title.replace(/[^\w\s-]/g, '').trim().replace(/\s+/g, '_') || 'story'}.twee`;
+	a.download = `${storyFilename(tree.title)}.twee`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+/**
+ * Triggers a browser download of the story as a raw JSON file.
+ */
+export function downloadJson(tree: StoryTree): void {
+	const content = JSON.stringify(tree, null, 2);
+	const blob = new Blob([content], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `${storyFilename(tree.title)}.json`;
 	a.click();
 	URL.revokeObjectURL(url);
 }
