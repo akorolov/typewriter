@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(npm cache:*)",
+      "Bash(node -e \"console.log\\(require\\('daisyui/package.json'\\).version\\)\")",
+      "Bash(npx vite:*)",
+      "Bash(npx vitest:*)",
+      "mcp__svelte__list-sections",
+      "mcp__svelte__get-documentation",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173/story/new)"
+    ]
+  }
+}

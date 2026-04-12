@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui' {
+	themes:
+		typewriter-light --default,
+		typewriter-dark --prefersdark;
+}
+
+@plugin 'daisyui/theme' {
+	name: 'typewriter-light';
+	default: true;
+	--color-base-100: oklch(from #f0eeeb l c h);
+	--color-base-200: oklch(from #ebdfce l c h);
+	--color-base-300: oklch(from #d6cdbf l c h);
+	--color-base-content: oklch(from #010c15 l c h);
+	--color-primary: oklch(from #006898 l c h);
+	--color-primary-content: oklch(from #f0eeeb l c h);
+	--color-secondary: oklch(from #204b65 l c h);
+	--color-secondary-content: oklch(from #f0eeeb l c h);
+	--color-accent: oklch(from #63a7b2 l c h);
+	--color-accent-content: oklch(from #010c15 l c h);
+	--color-neutral: oklch(from #010c15 l c h);
+	--color-neutral-content: oklch(from #f0eeeb l c h);
+	--color-error: oklch(from #ce1921 l c h);
+	--color-error-content: oklch(from #f0eeeb l c h);
+}
+
+@plugin 'daisyui/theme' {
+	name: 'typewriter-dark';
+	prefersdark: true;
+	--color-base-100: oklch(from #0f1923 l c h);
+	--color-base-200: oklch(from #162231 l c h);
+	--color-base-300: oklch(from #1e2d3d l c h);
+	--color-base-content: oklch(from #f0eeeb l c h);
+	--color-primary: oklch(from #63a7b2 l c h);
+	--color-primary-content: oklch(from #010c15 l c h);
+	--color-secondary: oklch(from #006898 l c h);
+	--color-secondary-content: oklch(from #f0eeeb l c h);
+	--color-accent: oklch(from #63a7b2 l c h);
+	--color-accent-content: oklch(from #010c15 l c h);
+	--color-neutral: oklch(from #f0eeeb l c h);
+	--color-neutral-content: oklch(from #010c15 l c h);
+	--color-error: oklch(from #ce1921 l c h);
+	--color-error-content: oklch(from #f0eeeb l c h);
+}
