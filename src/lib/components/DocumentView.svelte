@@ -25,6 +25,10 @@
 	function handleRemoveBranch(nodeId: string) {
 		store.removeBranch(nodeId);
 	}
+
+	function handleRename(nodeId: string, label: string) {
+		store.updateNodeLabel(nodeId, label);
+	}
 </script>
 
 <div class="document-view mx-auto w-full max-w-3xl px-4 py-8">
@@ -42,6 +46,7 @@
 				onselectbranch={handleSelectBranch}
 				onaddbranch={handleAddBranch}
 				onremovebranch={handleRemoveBranch}
+				onrename={handleRename}
 			/>
 		{/if}
 
