@@ -7,7 +7,8 @@ export interface StoryNode {
 	content: JSONContent;
 	label?: string;
 	choiceText?: string;
-	mergeTargetId?: string;
+	/** IDs of existing nodes elsewhere in the tree offered as branch choices (merge-back links). */
+	mergeChildIds?: string[];
 	createdAt: number;
 	updatedAt: number;
 }

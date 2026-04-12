@@ -1,7 +1,7 @@
 import type { JSONContent } from '@tiptap/core';
 import type { BranchSelections, StoryTree } from '../models/story.js';
 import { resolvePath, switchBranch, switchBranchByDirection } from '../models/path.js';
-import { createStoryTree, splitNode, addBranch, deleteBranch, updateNodeContent, setMergeTarget } from '../models/tree.js';
+import { createStoryTree, splitNode, addBranch, deleteBranch, updateNodeContent, addMergeChild, removeMergeChild } from '../models/tree.js';
 import { saveStory } from '../persistence/indexeddb.js';
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -136,13 +136,13 @@ export function createStoryStore(initial?: StoryTree) {
 	}
 
 	function mergeBranch(nodeId: string, targetId: string): boolean {
-		const result = setMergeTarget(tree, nodeId, targetId);
+		const result = addMergeChild(tree, nodeId, targetId);
 		if (result) debouncedSave(tree);
 		return result;
 	}
 
-	function clearMergeTarget(nodeId: string): void {
-		setMergeTarget(tree, nodeId, null);
+	function clearMergeChild(nodeId: string, targetId: string): void {
+		removeMergeChild(tree, nodeId, targetId);
 		debouncedSave(tree);
 	}
 
@@ -169,7 +169,7 @@ export function createStoryStore(initial?: StoryTree) {
 		updateNodeLabel,
 		updateNodeChoiceText,
 		mergeBranch,
-		clearMergeTarget,
+		clearMergeChild,
 		forceSave
 	};
 }

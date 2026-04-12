@@ -164,16 +164,14 @@ export function exportToTwee(tree: StoryTree): string {
 		const body = blockToHarlowe(node.content).trim();
 
 		const links: string[] = [];
+		const allChoices = [...node.childIds, ...(node.mergeChildIds ?? [])];
 
-		if (node.mergeTargetId && tree.nodes[node.mergeTargetId]) {
-			// Merge: link to the convergence point
-			links.push(`[[${names.get(node.mergeTargetId)!}]]`);
-		} else if (node.childIds.length === 1) {
+		if (allChoices.length === 1) {
 			// Linear continuation: transparent forward link
-			links.push(`[[${names.get(node.childIds[0])!}]]`);
+			links.push(`[[${names.get(allChoices[0])!}]]`);
 		} else {
-			// Choice fork: one link per branch
-			for (const childId of node.childIds) {
+			// Choice fork: one link per branch (real children + merge children)
+			for (const childId of allChoices) {
 				const child = tree.nodes[childId];
 				const childName = names.get(childId)!;
 				const linkText = child.choiceText?.trim() || childName;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
+	import { getAllChoices } from '../models/path.js';
 	import { downloadTwee, downloadJson } from '../export/twine.js';
 	import Toolbar from './Toolbar.svelte';
 	import DocumentView from './DocumentView.svelte';
@@ -22,8 +23,8 @@
 		highlightNodeId = nodeId;
 	}
 
-	function handleMergeStart(nodeId: string) {
-		mergeSourceId = nodeId;
+	function handleMergeStart(parentId: string) {
+		mergeSourceId = parentId;
 		minimapOpen = true;
 		sidebarTab = 'map';
 	}
@@ -103,8 +104,7 @@
 				const nodeId = path[i];
 				const node = store.tree.nodes[nodeId];
 				if (node.parentId) {
-					const parent = store.tree.nodes[node.parentId];
-					if (parent.childIds.length > 1) {
+					if (getAllChoices(store.tree, node.parentId).length > 1) {
 						store.switchDirection(node.parentId, direction);
 						e.preventDefault();
 						return;

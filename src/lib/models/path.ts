@@ -1,9 +1,20 @@
 import type { BranchSelections, StoryTree } from './story.js';
 
 /**
+ * Returns all selectable choices at a node: real children + merge children.
+ */
+export function getAllChoices(tree: StoryTree, nodeId: string): string[] {
+	const node = tree.nodes[nodeId];
+	if (!node) return [];
+	return [...node.childIds, ...(node.mergeChildIds ?? [])];
+}
+
+/**
  * Resolves the active linear path from root to leaf,
  * using the branch selections to choose at each fork.
  * Defaults to the first child when no selection exists.
+ * When a merge child is selected, the path jumps to that node
+ * and continues from there.
  */
 export function resolvePath(tree: StoryTree, selections: BranchSelections): string[] {
 	const path: string[] = [];
@@ -19,20 +30,15 @@ export function resolvePath(tree: StoryTree, selections: BranchSelections): stri
 
 		path.push(currentId);
 
-		// Follow merge pointer if present, bypassing childIds
-		if (node.mergeTargetId && tree.nodes[node.mergeTargetId]) {
-			currentId = node.mergeTargetId;
-			continue;
-		}
-
-		if (node.childIds.length === 0) break;
+		const choices = getAllChoices(tree, currentId);
+		if (choices.length === 0) break;
 
 		// Use selection if available, otherwise default to first child
-		const selectedChild = selections[currentId];
-		if (selectedChild && node.childIds.includes(selectedChild)) {
-			currentId = selectedChild;
+		const selected = selections[currentId];
+		if (selected && choices.includes(selected)) {
+			currentId = selected;
 		} else {
-			currentId = node.childIds[0];
+			currentId = node.childIds[0] ?? null;
 		}
 	}
 
@@ -41,6 +47,7 @@ export function resolvePath(tree: StoryTree, selections: BranchSelections): stri
 
 /**
  * Switches to a sibling branch at a given fork point.
+ * Accepts both real children and merge children as valid targets.
  * Returns updated selections, or null if the switch is invalid.
  */
 export function switchBranch(
@@ -49,14 +56,15 @@ export function switchBranch(
 	parentId: string,
 	targetChildId: string
 ): BranchSelections | null {
-	const parent = tree.nodes[parentId];
-	if (!parent || !parent.childIds.includes(targetChildId)) return null;
+	const choices = getAllChoices(tree, parentId);
+	if (choices.length === 0 || !choices.includes(targetChildId)) return null;
 
 	return { ...selections, [parentId]: targetChildId };
 }
 
 /**
  * Switches to the next or previous sibling at a fork point.
+ * Considers both real children and merge children.
  * Returns updated selections, or null if at the boundary.
  */
 export function switchBranchByDirection(
@@ -65,24 +73,24 @@ export function switchBranchByDirection(
 	parentId: string,
 	direction: 'prev' | 'next'
 ): BranchSelections | null {
-	const parent = tree.nodes[parentId];
-	if (!parent || parent.childIds.length < 2) return null;
+	const choices = getAllChoices(tree, parentId);
+	if (choices.length < 2) return null;
 
-	const currentChild = selections[parentId] ?? parent.childIds[0];
-	const currentIndex = parent.childIds.indexOf(currentChild);
+	const currentChild = selections[parentId] ?? choices[0];
+	const currentIndex = choices.indexOf(currentChild);
 	if (currentIndex === -1) return null;
 
 	const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-	if (newIndex < 0 || newIndex >= parent.childIds.length) return null;
+	if (newIndex < 0 || newIndex >= choices.length) return null;
 
-	return { ...selections, [parentId]: parent.childIds[newIndex] };
+	return { ...selections, [parentId]: choices[newIndex] };
 }
 
 /**
- * Finds all fork points (nodes with multiple children) along the current path.
+ * Finds all fork points (nodes with multiple choices) along the current path.
  */
 export function findForksOnPath(tree: StoryTree, path: string[]): string[] {
-	return path.filter((id) => tree.nodes[id]?.childIds.length > 1);
+	return path.filter((id) => getAllChoices(tree, id).length > 1);
 }
 
 /**
@@ -93,10 +101,10 @@ export function getSelectedIndex(
 	selections: BranchSelections,
 	parentId: string
 ): number {
-	const parent = tree.nodes[parentId];
-	if (!parent) return 0;
+	const choices = getAllChoices(tree, parentId);
+	if (choices.length === 0) return 0;
 
-	const selected = selections[parentId] ?? parent.childIds[0];
-	const index = parent.childIds.indexOf(selected);
+	const selected = selections[parentId] ?? choices[0];
+	const index = choices.indexOf(selected);
 	return index === -1 ? 0 : index;
 }

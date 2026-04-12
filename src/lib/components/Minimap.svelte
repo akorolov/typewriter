@@ -1,7 +1,6 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
 	import { computeTreeLayout } from '../utils/tree-layout.js';
-	import { resolvePath } from '../models/path.js';
 
 	interface Props {
 		store: StoryStore;
@@ -15,23 +14,27 @@
 	const layout = $derived(computeTreeLayout(store.tree));
 	const pathSet = $derived(new Set(store.path));
 
-	// Nodes that are invalid pick targets: the source itself and all its ancestors
+	// Nodes that are invalid pick targets: the source itself and all its descendants
 	const invalidPickTargets = $derived(() => {
 		if (!mergeSourceId) return new Set<string>();
 		const invalid = new Set<string>();
-		let current: string | null = mergeSourceId;
-		while (current) {
-			invalid.add(current);
-			current = store.tree.nodes[current]?.parentId ?? null;
+		invalid.add(mergeSourceId);
+		// Can't merge into own descendants
+		const stack = [...(store.tree.nodes[mergeSourceId]?.childIds ?? [])];
+		while (stack.length > 0) {
+			const id = stack.pop()!;
+			invalid.add(id);
+			const node = store.tree.nodes[id];
+			if (node) stack.push(...node.childIds);
 		}
 		return invalid;
 	});
 
-	// Merge edges: nodes that have a mergeTargetId pointing to an existing node
+	// Merge edges: from parent nodes to their merge child targets
 	const mergeEdges = $derived(
 		Object.values(store.tree.nodes)
-			.filter((n) => n.mergeTargetId && store.tree.nodes[n.mergeTargetId])
-			.map((n) => ({ fromId: n.id, toId: n.mergeTargetId! }))
+			.filter((n) => n.mergeChildIds?.length)
+			.flatMap((n) => n.mergeChildIds!.filter((tid) => store.tree.nodes[tid]).map((tid) => ({ fromId: n.id, toId: tid })))
 	);
 
 	function handleNodeClick(nodeId: string) {

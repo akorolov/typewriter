@@ -86,10 +86,10 @@ export function splitNode(
 		}
 		node.childIds = [continuation.id, branch.id];
 
-		// Transfer mergeTargetId to continuation so the fork is navigable
-		if (node.mergeTargetId) {
-			continuation.mergeTargetId = node.mergeTargetId;
-			delete node.mergeTargetId;
+		// Transfer mergeChildIds to continuation so the fork is navigable
+		if (node.mergeChildIds?.length) {
+			continuation.mergeChildIds = node.mergeChildIds;
+			delete node.mergeChildIds;
 		}
 
 		tree.updatedAt = now;
@@ -122,10 +122,10 @@ export function splitNode(
 	node.content = { type: 'doc', content: keepContent };
 	node.childIds = [continuation.id, branch.id];
 
-	// Transfer mergeTargetId to continuation so the fork is navigable
-	if (node.mergeTargetId) {
-		continuation.mergeTargetId = node.mergeTargetId;
-		delete node.mergeTargetId;
+	// Transfer mergeChildIds to continuation so the fork is navigable
+	if (node.mergeChildIds?.length) {
+		continuation.mergeChildIds = node.mergeChildIds;
+		delete node.mergeChildIds;
 	}
 
 	node.updatedAt = now;
@@ -167,11 +167,12 @@ export function deleteBranch(tree: StoryTree, nodeId: string): boolean {
 		delete tree.nodes[id];
 	}
 
-	// Clear any mergeTargetId references that pointed to deleted nodes
+	// Clear any mergeChildIds references that pointed to deleted nodes
 	const deletedSet = new Set(toDelete);
 	for (const surviving of Object.values(tree.nodes)) {
-		if (surviving.mergeTargetId && deletedSet.has(surviving.mergeTargetId)) {
-			delete surviving.mergeTargetId;
+		if (surviving.mergeChildIds) {
+			surviving.mergeChildIds = surviving.mergeChildIds.filter((id) => !deletedSet.has(id));
+			if (surviving.mergeChildIds.length === 0) delete surviving.mergeChildIds;
 		}
 	}
 
@@ -225,37 +226,43 @@ export function updateNodeContent(tree: StoryTree, nodeId: string, content: JSON
 }
 
 /**
- * Sets or clears a merge target on a node.
- * When set, resolvePath will jump to targetId instead of following childIds.
- * Returns false if the target doesn't exist or would create a cycle.
+ * Adds a merge child to a node — an existing node elsewhere in the tree
+ * that appears as an additional branch choice alongside real children.
+ * Returns false if the target doesn't exist, is already a merge child, or would create a cycle.
  */
-export function setMergeTarget(tree: StoryTree, nodeId: string, targetId: string | null): boolean {
+export function addMergeChild(tree: StoryTree, nodeId: string, targetId: string): boolean {
 	const node = tree.nodes[nodeId];
 	if (!node) return false;
-
-	if (targetId === null) {
-		delete node.mergeTargetId;
-		node.updatedAt = Date.now();
-		tree.updatedAt = Date.now();
-		return true;
-	}
-
 	if (!tree.nodes[targetId]) return false;
+	if (targetId === nodeId) return false;
+	if (node.mergeChildIds?.includes(targetId)) return false;
 	if (wouldCreateCycle(tree, nodeId, targetId)) return false;
 
-	node.mergeTargetId = targetId;
+	if (!node.mergeChildIds) node.mergeChildIds = [];
+	node.mergeChildIds.push(targetId);
 	node.updatedAt = Date.now();
 	tree.updatedAt = Date.now();
 	return true;
 }
 
 /**
- * Returns true if setting nodeId's mergeTargetId to targetId would create a cycle.
- * Walks forward from targetId following both childIds and mergeTargetId links.
+ * Removes a merge child from a node.
+ */
+export function removeMergeChild(tree: StoryTree, nodeId: string, targetId: string): void {
+	const node = tree.nodes[nodeId];
+	if (!node?.mergeChildIds) return;
+
+	node.mergeChildIds = node.mergeChildIds.filter((id) => id !== targetId);
+	if (node.mergeChildIds.length === 0) delete node.mergeChildIds;
+	node.updatedAt = Date.now();
+	tree.updatedAt = Date.now();
+}
+
+/**
+ * Returns true if adding targetId as a merge child of nodeId would create a cycle.
+ * Walks forward from targetId following both childIds and mergeChildIds links.
  */
 function wouldCreateCycle(tree: StoryTree, nodeId: string, targetId: string): boolean {
-	if (targetId === nodeId) return true;
-
 	const visited = new Set<string>();
 	const stack = [targetId];
 
@@ -268,8 +275,10 @@ function wouldCreateCycle(tree: StoryTree, nodeId: string, targetId: string): bo
 		const node = tree.nodes[id];
 		if (!node) continue;
 
-		if (node.mergeTargetId) stack.push(node.mergeTargetId);
 		for (const childId of node.childIds) stack.push(childId);
+		if (node.mergeChildIds) {
+			for (const mcId of node.mergeChildIds) stack.push(mcId);
+		}
 	}
 
 	return false;

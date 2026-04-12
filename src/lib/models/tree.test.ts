@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createStoryTree, createNode, splitNode, addBranch, deleteBranch, collectDescendants, updateNodeContent, setMergeTarget } from './tree.js';
+import { createStoryTree, createNode, splitNode, addBranch, deleteBranch, collectDescendants, updateNodeContent, addMergeChild, removeMergeChild } from './tree.js';
 
 describe('createStoryTree', () => {
 	it('creates a tree with a single root node', () => {
@@ -88,19 +88,21 @@ describe('splitNode', () => {
 		expect(tree.nodes[tree.rootNodeId].childIds).not.toContain(child.id);
 	});
 
-	it('transfers mergeTargetId to continuation when splitting a merge node', () => {
+	it('transfers mergeChildIds to continuation when splitting a node with merge children', () => {
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
-		setMergeTarget(tree, b.id, a.id);
+		// Add a as a merge child of root (root forks to [A, B] + merge→A)
+		// Actually: let's create a structure where root has mergeChildIds
+		const target = createNode(tree, a.id, undefined, 'Target');
+		addMergeChild(tree, tree.rootNodeId, target.id);
 
-		const { continuationId, branchId } = splitNode(tree, b.id, 0);
+		const { continuationId, branchId } = splitNode(tree, tree.rootNodeId, 0);
 
-		// mergeTargetId should move from b to continuation
-		expect(tree.nodes[b.id].mergeTargetId).toBeUndefined();
-		expect(tree.nodes[continuationId].mergeTargetId).toBe(a.id);
-		// new branch should not have mergeTargetId
-		expect(tree.nodes[branchId].mergeTargetId).toBeUndefined();
+		// mergeChildIds should move from root to continuation
+		expect(tree.nodes[tree.rootNodeId].mergeChildIds).toBeUndefined();
+		expect(tree.nodes[continuationId].mergeChildIds).toEqual([target.id]);
+		expect(tree.nodes[branchId].mergeChildIds).toBeUndefined();
 	});
 });
 
@@ -177,77 +179,112 @@ describe('collectDescendants', () => {
 	});
 });
 
-describe('setMergeTarget', () => {
-	it('sets a merge target on a node', () => {
+describe('addMergeChild', () => {
+	it('adds a merge child to a node', () => {
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
 		const shared = createNode(tree, a.id, undefined, 'Shared');
 
-		const result = setMergeTarget(tree, b.id, shared.id);
+		const result = addMergeChild(tree, tree.rootNodeId, shared.id);
 
 		expect(result).toBe(true);
-		expect(tree.nodes[b.id].mergeTargetId).toBe(shared.id);
+		expect(tree.nodes[tree.rootNodeId].mergeChildIds).toEqual([shared.id]);
 	});
 
-	it('clears a merge target when passed null', () => {
+	it('allows multiple merge children', () => {
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
-		setMergeTarget(tree, b.id, a.id);
+		const t1 = createNode(tree, a.id, undefined, 'T1');
+		const t2 = createNode(tree, b.id, undefined, 'T2');
 
-		const result = setMergeTarget(tree, b.id, null);
+		addMergeChild(tree, tree.rootNodeId, t1.id);
+		addMergeChild(tree, tree.rootNodeId, t2.id);
 
-		expect(result).toBe(true);
-		expect(tree.nodes[b.id].mergeTargetId).toBeUndefined();
+		expect(tree.nodes[tree.rootNodeId].mergeChildIds).toEqual([t1.id, t2.id]);
+	});
+
+	it('rejects a duplicate merge child', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		addMergeChild(tree, tree.rootNodeId, a.id);
+
+		expect(addMergeChild(tree, tree.rootNodeId, a.id)).toBe(false);
 	});
 
 	it('rejects a non-existent target', () => {
 		const tree = createStoryTree('Test');
-		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		createNode(tree, tree.rootNodeId, undefined, 'A');
 
-		expect(setMergeTarget(tree, a.id, 'nonexistent')).toBe(false);
-		expect(tree.nodes[a.id].mergeTargetId).toBeUndefined();
+		expect(addMergeChild(tree, tree.rootNodeId, 'nonexistent')).toBe(false);
+		expect(tree.nodes[tree.rootNodeId].mergeChildIds).toBeUndefined();
 	});
 
 	it('rejects a direct self-cycle', () => {
 		const tree = createStoryTree('Test');
-		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 
-		expect(setMergeTarget(tree, a.id, a.id)).toBe(false);
+		expect(addMergeChild(tree, tree.rootNodeId, tree.rootNodeId)).toBe(false);
 	});
 
 	it('rejects a cycle through childIds', () => {
-		// root → a → b, trying to set b merges back to root would cycle
+		// root → a → b, trying to add root as merge child of b would cycle
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, a.id, undefined, 'B');
 
-		expect(setMergeTarget(tree, b.id, tree.rootNodeId)).toBe(false);
+		expect(addMergeChild(tree, b.id, tree.rootNodeId)).toBe(false);
 	});
 
-	it('rejects a cycle through existing merge targets', () => {
-		// a mergeTarget → b, trying to set b mergeTarget → a would cycle
+	it('rejects a cycle through existing merge children', () => {
+		// root has merge child → a, trying to add root as merge child of a would cycle
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
-		setMergeTarget(tree, a.id, b.id);
+		addMergeChild(tree, a.id, b.id);
 
-		expect(setMergeTarget(tree, b.id, a.id)).toBe(false);
+		expect(addMergeChild(tree, b.id, a.id)).toBe(false);
 	});
 });
 
-describe('deleteBranch (merge target cleanup)', () => {
-	it('clears mergeTargetId on surviving nodes when the target is deleted', () => {
+describe('removeMergeChild', () => {
+	it('removes a merge child', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		addMergeChild(tree, tree.rootNodeId, a.id);
+
+		removeMergeChild(tree, tree.rootNodeId, a.id);
+
+		expect(tree.nodes[tree.rootNodeId].mergeChildIds).toBeUndefined();
+	});
+
+	it('removes only the specified merge child', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const t1 = createNode(tree, a.id, undefined, 'T1');
+		const t2 = createNode(tree, b.id, undefined, 'T2');
+		addMergeChild(tree, tree.rootNodeId, t1.id);
+		addMergeChild(tree, tree.rootNodeId, t2.id);
+
+		removeMergeChild(tree, tree.rootNodeId, t1.id);
+
+		expect(tree.nodes[tree.rootNodeId].mergeChildIds).toEqual([t2.id]);
+	});
+});
+
+describe('deleteBranch (merge child cleanup)', () => {
+	it('clears mergeChildIds on surviving nodes when the target is deleted', () => {
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
 		const c = createNode(tree, tree.rootNodeId, undefined, 'C');
-		setMergeTarget(tree, b.id, a.id);
+		const a1 = createNode(tree, a.id, undefined, 'A1');
+		addMergeChild(tree, b.id, a1.id);
 
 		deleteBranch(tree, a.id);
 
-		expect(tree.nodes[b.id].mergeTargetId).toBeUndefined();
+		expect(tree.nodes[b.id].mergeChildIds).toBeUndefined();
 	});
 });
 
