@@ -1,14 +1,15 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
-	import type { JSONContent } from '@tiptap/core';
+	import type { JSONContent, Editor } from '@tiptap/core';
 	import NodeEditor from './NodeEditor.svelte';
 	import BranchSelector from './BranchSelector.svelte';
 
 	interface Props {
 		store: StoryStore;
+		oneditorfocus?: (nodeId: string, editor: Editor) => void;
 	}
 
-	let { store }: Props = $props();
+	let { store, oneditorfocus }: Props = $props();
 
 	function handleUpdate(nodeId: string, content: JSONContent) {
 		store.updateContent(nodeId, content);
@@ -61,6 +62,7 @@
 			<NodeEditor
 				content={node.content}
 				onupdate={(content) => handleUpdate(nodeId, content)}
+				onfocus={(editor) => oneditorfocus?.(nodeId, editor)}
 				placeholder={i === 0 ? 'Begin your story...' : 'Continue writing...'}
 			/>
 		</div>

@@ -26,17 +26,43 @@
 		return '';
 	}
 
-	// Get the active editor for the toolbar
-	// For now, we'll pass null — the toolbar buttons will use the editor's own commands
-	// In a future iteration, we can wire this up more tightly
 	let activeEditor: import('@tiptap/core').Editor | null = $state(null);
+	let focusedNodeId: string | null = $state(null);
+
+	function handleEditorFocus(nodeId: string, editor: import('@tiptap/core').Editor) {
+		focusedNodeId = nodeId;
+		activeEditor = editor;
+	}
 
 	function handleBranch() {
-		const activeId = store.activeNodeId;
-		const node = store.tree.nodes[activeId];
-		// Branch at end of current node
-		const paragraphCount = node.content.content?.length ?? 0;
-		store.branch(activeId, paragraphCount);
+		const nodeId = focusedNodeId ?? store.activeNodeId;
+		const editor = activeEditor;
+
+		if (editor && focusedNodeId === nodeId) {
+			// Find which top-level block the cursor is in and split after it
+			const { from } = editor.state.selection;
+			let splitAfter = 0;
+			let childIndex = 0;
+			editor.state.doc.forEach((node, offset) => {
+				// offset is relative to doc start (after the opening token),
+				// but `from` is absolute — doc open token is at position 0,
+				// so first child starts at offset 1 in absolute terms.
+				const absStart = offset + 1;
+				const absEnd = absStart + node.nodeSize;
+				if (from >= absStart && from <= absEnd) {
+					splitAfter = childIndex + 1;
+				}
+				childIndex++;
+			});
+			// If cursor wasn't resolved (e.g. at very start), split after first paragraph
+			if (splitAfter === 0) splitAfter = 1;
+			store.branch(nodeId, splitAfter);
+		} else {
+			// Fallback: branch at end
+			const node = store.tree.nodes[nodeId];
+			const paragraphCount = node.content.content?.length ?? 0;
+			store.branch(nodeId, paragraphCount);
+		}
 	}
 
 	function handleKeydown(e: KeyboardEvent) {
@@ -81,7 +107,7 @@
 
 	<div class="flex flex-1 overflow-hidden">
 		<div class="flex-1 overflow-y-auto bg-base-100">
-			<DocumentView {store} />
+			<DocumentView {store} oneditorfocus={handleEditorFocus} />
 		</div>
 
 		{#if minimapOpen}

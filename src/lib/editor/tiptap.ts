@@ -11,13 +11,14 @@ import CharacterCount from '@tiptap/extension-character-count';
 export interface CreateEditorOptions {
 	content: JSONContent;
 	onUpdate: (content: JSONContent) => void;
+	onFocus?: (editor: Editor) => void;
 	placeholder?: string;
 	editable?: boolean;
 }
 
 export function createEditor(
 	element: HTMLElement,
-	{ content, onUpdate, placeholder, editable = true }: CreateEditorOptions
+	{ content, onUpdate, onFocus, placeholder, editable = true }: CreateEditorOptions
 ): Editor {
 	return new Editor({
 		element,
@@ -41,6 +42,9 @@ export function createEditor(
 		],
 		onUpdate: ({ editor }) => {
 			onUpdate(editor.getJSON());
+		},
+		onFocus: ({ editor }) => {
+			onFocus?.(editor);
 		}
 	});
 }

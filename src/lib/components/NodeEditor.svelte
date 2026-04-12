@@ -6,11 +6,18 @@
 	interface Props {
 		content: JSONContent;
 		onupdate: (content: JSONContent) => void;
+		onfocus?: (editor: Editor) => void;
 		placeholder?: string;
 		editable?: boolean;
 	}
 
-	let { content, onupdate, placeholder = 'Start writing...', editable = true }: Props = $props();
+	let {
+		content,
+		onupdate,
+		onfocus,
+		placeholder = 'Start writing...',
+		editable = true
+	}: Props = $props();
 
 	let editorElement: HTMLDivElement | undefined = $state();
 	let editor: Editor | undefined = $state();
@@ -21,6 +28,7 @@
 		editor = createEditor(editorElement, {
 			content,
 			onUpdate: onupdate,
+			onFocus: onfocus,
 			placeholder,
 			editable
 		});
@@ -33,6 +41,18 @@
 	$effect(() => {
 		if (editor && editor.isEditable !== editable) {
 			editor.setEditable(editable);
+		}
+	});
+
+	// Sync TipTap content when the stored node content changes externally
+	// (e.g. after splitNode truncates the node during branching).
+	// We compare JSON strings to avoid re-setting on every keystroke.
+	$effect(() => {
+		if (!editor) return;
+		const incoming = JSON.stringify(content);
+		const current = JSON.stringify(editor.getJSON());
+		if (incoming !== current) {
+			editor.commands.setContent(content, { emitUpdate: false });
 		}
 	});
 
