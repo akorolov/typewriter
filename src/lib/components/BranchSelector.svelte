@@ -11,13 +11,19 @@
 		onremovebranch?: (nodeId: string) => void;
 		onrename?: (nodeId: string, label: string) => void;
 		onedit?: (nodeId: string) => void;
+		onmergestart?: (nodeId: string) => void;
+		onclearmerge?: (nodeId: string) => void;
+		/** When true, shows all branches as disabled with merge-point styling */
+		mergePoint?: boolean;
 	}
 
-	let { tree, parentId, selections, onselectbranch, onaddbranch, onremovebranch, onrename, onedit }: Props =
+	let { tree, parentId, selections, onselectbranch, onaddbranch, onremovebranch, onrename, onedit, onmergestart, onclearmerge, mergePoint = false }: Props =
 		$props();
 
 	const parent = $derived(tree.nodes[parentId]);
 	const selectedIndex = $derived(getSelectedIndex(tree, selections, parentId));
+	const selectedNode = $derived(tree.nodes[parent.childIds[selectedIndex]]);
+	const selectedHasMerge = $derived(!!selectedNode?.mergeTargetId);
 
 	// Context menu state
 	let contextMenu = $state<{ x: number; y: number; childId: string; index: number } | null>(null);
@@ -101,8 +107,11 @@
 
 <div class="branch-selector my-6">
 	<div class="flex items-center gap-2 px-2">
-		<div class="h-px flex-1 bg-accent/30"></div>
+		<div class="h-px flex-1 {mergePoint ? 'bg-secondary/30' : 'bg-accent/30'}"></div>
 		<div class="flex items-center gap-1">
+			{#if mergePoint}
+				<span class="mr-1 text-xs text-secondary/70">↩</span>
+			{/if}
 			{#each parent.childIds as childId, i (childId)}
 				{@const node = tree.nodes[childId]}
 				{@const isSelected = i === selectedIndex}
@@ -117,19 +126,26 @@
 					/>
 				{:else}
 					<button
-						class="branch-tab rounded-full px-3 py-0.5 text-xs font-medium transition-all {node.choiceText ? 'tooltip tooltip-bottom' : ''}"
-						class:branch-tab-active={isSelected}
-						class:branch-tab-inactive={!isSelected}
-						onclick={() => onselectbranch(parentId, childId)}
-						oncontextmenu={(e) => handleContextMenu(e, childId, i)}
-						data-tip={node.choiceText || undefined}
+						class="branch-tab inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-medium transition-all {node.choiceText && !mergePoint ? 'tooltip tooltip-bottom' : ''}"
+						class:branch-tab-active={isSelected && !mergePoint}
+						class:branch-tab-inactive={!isSelected && !mergePoint}
+						class:branch-tab-merge-active={isSelected && mergePoint}
+						class:branch-tab-merge-inactive={!isSelected && mergePoint}
+						disabled={mergePoint || (selectedHasMerge && !isSelected)}
+						onclick={() => !mergePoint && onselectbranch(parentId, childId)}
+						oncontextmenu={(e) => !mergePoint && handleContextMenu(e, childId, i)}
+						data-tip={!mergePoint ? (node.choiceText || undefined) : undefined}
 						title={node.label ?? `Branch ${i + 1}`}
 					>
 						{node.label ?? `Branch ${i + 1}`}
+						{#if node.mergeTargetId}
+							{@const mergeTarget = tree.nodes[node.mergeTargetId]}
+							<span class="merge-badge" title="Merges into: {mergeTarget?.label ?? 'another node'}">⇒</span>
+						{/if}
 					</button>
 				{/if}
 			{/each}
-			{#if onaddbranch}
+			{#if onaddbranch && !mergePoint}
 				<button
 					class="btn btn-ghost btn-xs rounded-full px-2 text-accent/60 hover:text-accent"
 					title="Add branch"
@@ -139,7 +155,7 @@
 				</button>
 			{/if}
 		</div>
-		<div class="h-px flex-1 bg-accent/30"></div>
+		<div class="h-px flex-1 {mergePoint ? 'bg-secondary/30' : 'bg-accent/30'}"></div>
 	</div>
 </div>
 
@@ -147,6 +163,7 @@
 {#if contextMenu}
 	{@const canDelete = parent.childIds.length > 1}
 	{@const menuChildId = contextMenu.childId}
+	{@const menuNode = tree.nodes[menuChildId]}
 	<div
 		class="context-menu fixed z-50 min-w-36 rounded-lg border border-base-300 bg-base-100 py-1 shadow-lg"
 		style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
@@ -168,6 +185,24 @@
 		>
 			Rename
 		</button>
+		{#if menuNode?.childIds.length === 0 && !menuNode?.mergeTargetId && onmergestart}
+			<button
+				class="context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-base-200"
+				role="menuitem"
+				onclick={() => { onmergestart!(menuChildId); closeContextMenu(); }}
+			>
+				Merge into...
+			</button>
+		{/if}
+		{#if menuNode?.mergeTargetId && onclearmerge}
+			<button
+				class="context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-base-200"
+				role="menuitem"
+				onclick={() => { onclearmerge!(menuChildId); closeContextMenu(); }}
+			>
+				Remove merge
+			</button>
+		{/if}
 		{#if canDelete}
 			<button
 				class="context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-error hover:bg-base-200"
@@ -215,9 +250,27 @@
 		color: oklch(from var(--color-base-content) l c h);
 	}
 
+	.branch-tab-merge-active {
+		background-color: oklch(from var(--color-secondary) l c h / 0.15);
+		color: oklch(from var(--color-base-content) l c h / 0.5);
+		cursor: default;
+		outline: 1px solid oklch(from var(--color-secondary) l c h / 0.3);
+	}
+
+	.branch-tab-merge-inactive {
+		background-color: oklch(from var(--color-base-200) l c h / 0.4);
+		color: oklch(from var(--color-base-content) l c h / 0.25);
+		cursor: default;
+	}
+
 	.branch-rename-input {
 		width: 8rem;
 		background-color: oklch(from var(--color-base-100) l c h);
 		color: oklch(from var(--color-base-content) l c h);
+	}
+
+	.merge-badge {
+		color: oklch(from var(--color-secondary) l c h);
+		font-size: 0.65rem;
 	}
 </style>

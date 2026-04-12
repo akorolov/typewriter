@@ -5,18 +5,45 @@
 
 	interface Props {
 		store: StoryStore;
+		mergeSourceId?: string | null;
+		onmergetarget?: (targetId: string) => void;
+		oncancelmerge?: () => void;
 	}
 
-	let { store }: Props = $props();
+	let { store, mergeSourceId = null, onmergetarget, oncancelmerge }: Props = $props();
 
 	const layout = $derived(computeTreeLayout(store.tree));
 	const pathSet = $derived(new Set(store.path));
 
-	function handleNodeClick(nodeId: string) {
-		// Navigate to this node's path by finding its ancestors and setting selections
-		const ancestry = getAncestry(nodeId);
+	// Nodes that are invalid pick targets: the source itself and all its ancestors
+	const invalidPickTargets = $derived(() => {
+		if (!mergeSourceId) return new Set<string>();
+		const invalid = new Set<string>();
+		let current: string | null = mergeSourceId;
+		while (current) {
+			invalid.add(current);
+			current = store.tree.nodes[current]?.parentId ?? null;
+		}
+		return invalid;
+	});
 
-		// Set selections for each fork along the way
+	// Merge edges: nodes that have a mergeTargetId pointing to an existing node
+	const mergeEdges = $derived(
+		Object.values(store.tree.nodes)
+			.filter((n) => n.mergeTargetId && store.tree.nodes[n.mergeTargetId])
+			.map((n) => ({ fromId: n.id, toId: n.mergeTargetId! }))
+	);
+
+	function handleNodeClick(nodeId: string) {
+		if (mergeSourceId) {
+			if (!invalidPickTargets().has(nodeId)) {
+				onmergetarget?.(nodeId);
+			}
+			return;
+		}
+
+		// Normal navigation: find ancestors and set selections
+		const ancestry = getAncestry(nodeId);
 		for (const id of ancestry) {
 			const node = store.tree.nodes[id];
 			if (node.parentId) {
@@ -39,6 +66,13 @@
 	const NODE_RADIUS = 8;
 </script>
 
+{#if mergeSourceId}
+	<div class="flex items-center justify-between border-b border-base-300 bg-warning/10 px-3 py-2">
+		<span class="text-xs text-warning-content/80">Click a node to merge into</span>
+		<button class="btn btn-ghost btn-xs" onclick={oncancelmerge}>Cancel</button>
+	</div>
+{/if}
+
 <div class="minimap overflow-auto p-4">
 	{#if layout.nodes.length > 0}
 		<svg
@@ -47,7 +81,13 @@
 			viewBox="-10 0 {layout.width + 20} {layout.height + 20}"
 			class="mx-auto"
 		>
-			<!-- Edges -->
+			<defs>
+				<marker id="merge-arrow" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+					<path d="M 0 0 L 6 3 L 0 6 Z" fill="oklch(from var(--color-secondary) l c h)" />
+				</marker>
+			</defs>
+
+			<!-- Tree edges -->
 			{#each layout.edges as edge (edge.fromId + '-' + edge.toId)}
 				{@const from = layout.nodes.find((n) => n.id === edge.fromId)}
 				{@const to = layout.nodes.find((n) => n.id === edge.toId)}
@@ -61,22 +101,55 @@
 				{/if}
 			{/each}
 
+			<!-- Merge edges (dashed curved arrows bowing to the right) -->
+			{#each mergeEdges as edge (edge.fromId + '-merge-' + edge.toId)}
+				{@const from = layout.nodes.find((n) => n.id === edge.fromId)}
+				{@const to = layout.nodes.find((n) => n.id === edge.toId)}
+				{#if from && to}
+					{@const bow = Math.max(40, Math.abs(to.x - from.x) + 30)}
+					<path
+						d="M {from.x} {from.y} C {from.x + bow} {from.y}, {to.x + bow} {to.y}, {to.x + NODE_RADIUS} {to.y}"
+						fill="none"
+						stroke="oklch(from var(--color-secondary) l c h)"
+						stroke-width="1.5"
+						stroke-dasharray="4 3"
+						marker-end="url(#merge-arrow)"
+					/>
+				{/if}
+			{/each}
+
 			<!-- Nodes -->
 			{#each layout.nodes as node (node.id)}
 				{@const onPath = pathSet.has(node.id)}
+				{@const isSource = mergeSourceId === node.id}
+				{@const isInvalid = mergeSourceId ? invalidPickTargets().has(node.id) : false}
+				{@const isValidTarget = mergeSourceId && !isInvalid}
 				<g
-					class="cursor-pointer"
+					class={mergeSourceId ? (isInvalid ? 'cursor-not-allowed' : 'cursor-crosshair') : 'cursor-pointer'}
 					onclick={() => handleNodeClick(node.id)}
 					role="button"
 					tabindex="0"
 					onkeydown={(e) => e.key === 'Enter' && handleNodeClick(node.id)}
+					opacity={isInvalid ? 0.3 : 1}
 				>
 					<circle
 						cx={node.x}
 						cy={node.y}
 						r={NODE_RADIUS}
-						fill={onPath ? 'oklch(from var(--color-primary) l c h)' : 'oklch(from var(--color-base-200) l c h)'}
-						stroke={onPath ? 'oklch(from var(--color-primary) l c h)' : 'oklch(from var(--color-base-300) l c h)'}
+						fill={isSource
+							? 'oklch(from var(--color-warning) l c h)'
+							: isValidTarget
+								? 'oklch(from var(--color-success) l c h / 0.3)'
+								: onPath
+									? 'oklch(from var(--color-primary) l c h)'
+									: 'oklch(from var(--color-base-200) l c h)'}
+						stroke={isSource
+							? 'oklch(from var(--color-warning) l c h)'
+							: isValidTarget
+								? 'oklch(from var(--color-success) l c h)'
+								: onPath
+									? 'oklch(from var(--color-primary) l c h)'
+									: 'oklch(from var(--color-base-300) l c h)'}
 						stroke-width="2"
 					/>
 					{#if node.label}

@@ -7,13 +7,23 @@ import type { BranchSelections, StoryTree } from './story.js';
  */
 export function resolvePath(tree: StoryTree, selections: BranchSelections): string[] {
 	const path: string[] = [];
+	const visited = new Set<string>();
 	let currentId: string | null = tree.rootNodeId;
 
 	while (currentId) {
+		if (visited.has(currentId)) break; // cycle guard
+		visited.add(currentId);
+
 		const node = tree.nodes[currentId];
 		if (!node) break;
 
 		path.push(currentId);
+
+		// Follow merge pointer if present, bypassing childIds
+		if (node.mergeTargetId && tree.nodes[node.mergeTargetId]) {
+			currentId = node.mergeTargetId;
+			continue;
+		}
 
 		if (node.childIds.length === 0) break;
 

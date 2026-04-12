@@ -85,6 +85,13 @@ export function splitNode(
 			continuation.childIds.push(childId);
 		}
 		node.childIds = [continuation.id, branch.id];
+
+		// Transfer mergeTargetId to continuation so the fork is navigable
+		if (node.mergeTargetId) {
+			continuation.mergeTargetId = node.mergeTargetId;
+			delete node.mergeTargetId;
+		}
+
 		tree.updatedAt = now;
 
 		return { continuationId: continuation.id, branchId: branch.id };
@@ -114,6 +121,13 @@ export function splitNode(
 	// Update original node
 	node.content = { type: 'doc', content: keepContent };
 	node.childIds = [continuation.id, branch.id];
+
+	// Transfer mergeTargetId to continuation so the fork is navigable
+	if (node.mergeTargetId) {
+		continuation.mergeTargetId = node.mergeTargetId;
+		delete node.mergeTargetId;
+	}
+
 	node.updatedAt = now;
 	tree.updatedAt = now;
 
@@ -151,6 +165,14 @@ export function deleteBranch(tree: StoryTree, nodeId: string): boolean {
 	// Delete all nodes in this branch
 	for (const id of toDelete) {
 		delete tree.nodes[id];
+	}
+
+	// Clear any mergeTargetId references that pointed to deleted nodes
+	const deletedSet = new Set(toDelete);
+	for (const surviving of Object.values(tree.nodes)) {
+		if (surviving.mergeTargetId && deletedSet.has(surviving.mergeTargetId)) {
+			delete surviving.mergeTargetId;
+		}
 	}
 
 	// If parent now has exactly one child, collapse it into the parent
@@ -200,4 +222,55 @@ export function updateNodeContent(tree: StoryTree, nodeId: string, content: JSON
 	node.content = content;
 	node.updatedAt = Date.now();
 	tree.updatedAt = Date.now();
+}
+
+/**
+ * Sets or clears a merge target on a node.
+ * When set, resolvePath will jump to targetId instead of following childIds.
+ * Returns false if the target doesn't exist or would create a cycle.
+ */
+export function setMergeTarget(tree: StoryTree, nodeId: string, targetId: string | null): boolean {
+	const node = tree.nodes[nodeId];
+	if (!node) return false;
+
+	if (targetId === null) {
+		delete node.mergeTargetId;
+		node.updatedAt = Date.now();
+		tree.updatedAt = Date.now();
+		return true;
+	}
+
+	if (!tree.nodes[targetId]) return false;
+	if (wouldCreateCycle(tree, nodeId, targetId)) return false;
+
+	node.mergeTargetId = targetId;
+	node.updatedAt = Date.now();
+	tree.updatedAt = Date.now();
+	return true;
+}
+
+/**
+ * Returns true if setting nodeId's mergeTargetId to targetId would create a cycle.
+ * Walks forward from targetId following both childIds and mergeTargetId links.
+ */
+function wouldCreateCycle(tree: StoryTree, nodeId: string, targetId: string): boolean {
+	if (targetId === nodeId) return true;
+
+	const visited = new Set<string>();
+	const stack = [targetId];
+
+	while (stack.length > 0) {
+		const id = stack.pop()!;
+		if (id === nodeId) return true;
+		if (visited.has(id)) continue;
+		visited.add(id);
+
+		const node = tree.nodes[id];
+		if (!node) continue;
+
+		if (node.mergeTargetId) stack.push(node.mergeTargetId);
+		for (const childId of node.childIds) stack.push(childId);
+	}
+
+	return false;
 }

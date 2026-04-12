@@ -13,11 +13,29 @@
 	let minimapOpen = $state(true);
 	let sidebarTab = $state<'map' | 'branch'>('map');
 	let highlightNodeId = $state<string | null>(null);
+	let mergeSourceId = $state<string | null>(null);
 
 	function handleEditBranch(nodeId: string) {
 		minimapOpen = true;
 		sidebarTab = 'branch';
 		highlightNodeId = nodeId;
+	}
+
+	function handleMergeStart(nodeId: string) {
+		mergeSourceId = nodeId;
+		minimapOpen = true;
+		sidebarTab = 'map';
+	}
+
+	function handleMergeTarget(targetId: string) {
+		if (mergeSourceId) {
+			store.mergeBranch(mergeSourceId, targetId);
+			mergeSourceId = null;
+		}
+	}
+
+	function handleCancelMerge() {
+		mergeSourceId = null;
 	}
 
 	// Word count: sum up text content across all nodes in the tree
@@ -94,6 +112,13 @@
 			}
 		}
 
+		// Escape to cancel merge pick mode
+		if (e.key === 'Escape' && mergeSourceId) {
+			handleCancelMerge();
+			e.preventDefault();
+			return;
+		}
+
 		// Ctrl+S to save
 		if (e.ctrlKey && e.key === 's') {
 			e.preventDefault();
@@ -115,7 +140,7 @@
 
 	<div class="flex flex-1 overflow-hidden">
 		<div class="flex-1 overflow-y-auto bg-base-100">
-			<DocumentView {store} oneditorfocus={handleEditorFocus} oneditbranch={handleEditBranch} />
+			<DocumentView {store} oneditorfocus={handleEditorFocus} oneditbranch={handleEditBranch} onmergestart={handleMergeStart} />
 		</div>
 
 		{#if minimapOpen}
@@ -143,7 +168,7 @@
 				</div>
 				<div class="min-h-0 flex-1 overflow-y-auto">
 					{#if sidebarTab === 'map'}
-						<Minimap {store} />
+						<Minimap {store} {mergeSourceId} onmergetarget={handleMergeTarget} oncancelmerge={handleCancelMerge} />
 					{:else}
 						<BranchInfo {store} bind:highlightNodeId />
 					{/if}

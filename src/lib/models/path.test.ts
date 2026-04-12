@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolvePath, switchBranch, switchBranchByDirection, findForksOnPath, getSelectedIndex } from './path.js';
-import { createStoryTree, createNode } from './tree.js';
+import { createStoryTree, createNode, setMergeTarget } from './tree.js';
 
 function buildTestTree() {
 	// root → [A, B]
@@ -44,6 +44,46 @@ describe('resolvePath', () => {
 		const path = resolvePath(tree, selections);
 
 		expect(path).toEqual([tree.rootNodeId, a.id, a1.id]);
+	});
+
+	it('follows a merge pointer instead of childIds', () => {
+		// root → [a, b], a → a1; b merges into a1
+		// selecting b: root → b → a1
+		const { tree, a, b, a1 } = buildTestTree();
+		setMergeTarget(tree, b.id, a1.id);
+		const selections = { [tree.rootNodeId]: b.id };
+
+		const path = resolvePath(tree, selections);
+
+		expect(path).toEqual([tree.rootNodeId, b.id, a1.id]);
+	});
+
+	it('continues past the merge target if it has children', () => {
+		// root → [a, b], a → a1 → a2; b merges into a1
+		// selecting b: root → b → a1 → a2
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const a1 = createNode(tree, a.id, undefined, 'A1');
+		const a2 = createNode(tree, a1.id, undefined, 'A2');
+		setMergeTarget(tree, b.id, a1.id);
+		const selections = { [tree.rootNodeId]: b.id };
+
+		const path = resolvePath(tree, selections);
+
+		expect(path).toEqual([tree.rootNodeId, b.id, a1.id, a2.id]);
+	});
+
+	it('does not loop on a corrupt merge cycle', () => {
+		// Manually corrupt the tree to force a cycle; resolvePath should terminate
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		tree.nodes[a.id].mergeTargetId = tree.rootNodeId; // bypasses setMergeTarget safety check
+
+		const path = resolvePath(tree, {});
+
+		// Should terminate without throwing; exact path doesn't matter
+		expect(path.length).toBeGreaterThan(0);
 	});
 });
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createStoryTree, createNode, splitNode, addBranch, deleteBranch, collectDescendants, updateNodeContent } from './tree.js';
+import { createStoryTree, createNode, splitNode, addBranch, deleteBranch, collectDescendants, updateNodeContent, setMergeTarget } from './tree.js';
 
 describe('createStoryTree', () => {
 	it('creates a tree with a single root node', () => {
@@ -87,6 +87,21 @@ describe('splitNode', () => {
 		// Root should not have the old child
 		expect(tree.nodes[tree.rootNodeId].childIds).not.toContain(child.id);
 	});
+
+	it('transfers mergeTargetId to continuation when splitting a merge node', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		setMergeTarget(tree, b.id, a.id);
+
+		const { continuationId, branchId } = splitNode(tree, b.id, 0);
+
+		// mergeTargetId should move from b to continuation
+		expect(tree.nodes[b.id].mergeTargetId).toBeUndefined();
+		expect(tree.nodes[continuationId].mergeTargetId).toBe(a.id);
+		// new branch should not have mergeTargetId
+		expect(tree.nodes[branchId].mergeTargetId).toBeUndefined();
+	});
 });
 
 describe('addBranch', () => {
@@ -159,6 +174,80 @@ describe('collectDescendants', () => {
 		expect(desc).toContain(a1.id);
 		expect(desc).toContain(a2.id);
 		expect(desc).toContain(a1x.id);
+	});
+});
+
+describe('setMergeTarget', () => {
+	it('sets a merge target on a node', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const shared = createNode(tree, a.id, undefined, 'Shared');
+
+		const result = setMergeTarget(tree, b.id, shared.id);
+
+		expect(result).toBe(true);
+		expect(tree.nodes[b.id].mergeTargetId).toBe(shared.id);
+	});
+
+	it('clears a merge target when passed null', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		setMergeTarget(tree, b.id, a.id);
+
+		const result = setMergeTarget(tree, b.id, null);
+
+		expect(result).toBe(true);
+		expect(tree.nodes[b.id].mergeTargetId).toBeUndefined();
+	});
+
+	it('rejects a non-existent target', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+
+		expect(setMergeTarget(tree, a.id, 'nonexistent')).toBe(false);
+		expect(tree.nodes[a.id].mergeTargetId).toBeUndefined();
+	});
+
+	it('rejects a direct self-cycle', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+
+		expect(setMergeTarget(tree, a.id, a.id)).toBe(false);
+	});
+
+	it('rejects a cycle through childIds', () => {
+		// root → a → b, trying to set b merges back to root would cycle
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, a.id, undefined, 'B');
+
+		expect(setMergeTarget(tree, b.id, tree.rootNodeId)).toBe(false);
+	});
+
+	it('rejects a cycle through existing merge targets', () => {
+		// a mergeTarget → b, trying to set b mergeTarget → a would cycle
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		setMergeTarget(tree, a.id, b.id);
+
+		expect(setMergeTarget(tree, b.id, a.id)).toBe(false);
+	});
+});
+
+describe('deleteBranch (merge target cleanup)', () => {
+	it('clears mergeTargetId on surviving nodes when the target is deleted', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const c = createNode(tree, tree.rootNodeId, undefined, 'C');
+		setMergeTarget(tree, b.id, a.id);
+
+		deleteBranch(tree, a.id);
+
+		expect(tree.nodes[b.id].mergeTargetId).toBeUndefined();
 	});
 });
 

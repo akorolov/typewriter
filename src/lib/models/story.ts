@@ -7,6 +7,7 @@ export interface StoryNode {
 	content: JSONContent;
 	label?: string;
 	choiceText?: string;
+	mergeTargetId?: string;
 	createdAt: number;
 	updatedAt: number;
 }
