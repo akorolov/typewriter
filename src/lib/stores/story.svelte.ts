@@ -14,9 +14,10 @@ function debouncedSave(tree: StoryTree) {
 }
 
 export function createStoryStore(initial?: StoryTree) {
-	let tree = $state<StoryTree>(initial ?? createStoryTree('Untitled Story'));
+	const initialTree = initial ?? createStoryTree('Untitled Story');
+	let tree = $state<StoryTree>(initialTree);
 	let selections = $state<BranchSelections>({});
-	let activeNodeId = $state<string>(tree.rootNodeId);
+	let activeNodeId = $state<string>(initialTree.rootNodeId);
 
 	const path = $derived(resolvePath(tree, selections));
 

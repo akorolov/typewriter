@@ -70,6 +70,7 @@
 				{#each store.tree.nodes[fork.parentId].childIds as childId, j (childId)}
 					{@const node = store.tree.nodes[childId]}
 					{@const isSelected = childId === fork.selectedChildId}
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 					<!-- svelte-ignore a11y_click_events_have_key_events -->
 					<div
 						class="branch-row mb-1.5 rounded-md p-2"
