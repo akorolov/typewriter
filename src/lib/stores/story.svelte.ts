@@ -109,6 +109,15 @@ export function createStoryStore(initial?: StoryTree) {
 		}
 	}
 
+	function updateNodeChoiceText(nodeId: string, choiceText: string) {
+		const node = tree.nodes[nodeId];
+		if (node) {
+			node.choiceText = choiceText;
+			node.updatedAt = Date.now();
+			debouncedSave(tree);
+		}
+	}
+
 	function forceSave() {
 		if (saveTimeout) clearTimeout(saveTimeout);
 		return saveStory($state.snapshot(tree) as StoryTree);
@@ -130,6 +139,7 @@ export function createStoryStore(initial?: StoryTree) {
 		switchDirection,
 		updateTitle,
 		updateNodeLabel,
+		updateNodeChoiceText,
 		forceSave
 	};
 }

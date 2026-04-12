@@ -3,6 +3,7 @@
 	import Toolbar from './Toolbar.svelte';
 	import DocumentView from './DocumentView.svelte';
 	import Minimap from './Minimap.svelte';
+	import BranchInfo from './BranchInfo.svelte';
 
 	interface Props {
 		store: StoryStore;
@@ -10,6 +11,7 @@
 
 	let { store }: Props = $props();
 	let minimapOpen = $state(true);
+	let sidebarTab = $state<'map' | 'branch'>('map');
 
 	// Word count: sum up text content across all nodes in the current path
 	const wordCount = $derived(
@@ -111,24 +113,41 @@
 		</div>
 
 		{#if minimapOpen}
-			<div class="w-64 shrink-0 border-l border-base-300 bg-base-200">
-				<div class="flex items-center justify-between border-b border-base-300 px-3 py-1.5">
-					<span class="text-xs font-medium text-base-content/70">Story Map</span>
+			<div class="flex w-64 shrink-0 flex-col border-l border-base-300 bg-base-200">
+				<div class="flex items-center border-b border-base-300">
 					<button
-						class="btn btn-ghost btn-xs"
+						class="flex-1 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors {sidebarTab === 'map' ? 'border-primary text-base-content' : 'border-transparent text-base-content/50'}"
+						onclick={() => (sidebarTab = 'map')}
+					>
+						Story Map
+					</button>
+					<button
+						class="flex-1 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors {sidebarTab === 'branch' ? 'border-primary text-base-content' : 'border-transparent text-base-content/50'}"
+						onclick={() => (sidebarTab = 'branch')}
+					>
+						Branch Info
+					</button>
+					<button
+						class="btn btn-ghost btn-xs px-2"
 						onclick={() => (minimapOpen = false)}
-						title="Close minimap"
+						title="Close sidebar"
 					>
 						&times;
 					</button>
 				</div>
-				<Minimap {store} />
+				<div class="min-h-0 flex-1 overflow-y-auto">
+					{#if sidebarTab === 'map'}
+						<Minimap {store} />
+					{:else}
+						<BranchInfo {store} />
+					{/if}
+				</div>
 			</div>
 		{:else}
 			<button
 				class="absolute bottom-4 right-4 btn btn-secondary btn-sm"
 				onclick={() => (minimapOpen = true)}
-				title="Open story map"
+				title="Open sidebar"
 			>
 				Map
 			</button>

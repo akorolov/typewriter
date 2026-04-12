@@ -6,6 +6,7 @@ export interface StoryNode {
 	childIds: string[];
 	content: JSONContent;
 	label?: string;
+	choiceText?: string;
 	createdAt: number;
 	updatedAt: number;
 }
