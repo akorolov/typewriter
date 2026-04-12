@@ -102,10 +102,11 @@ describe('addBranch', () => {
 });
 
 describe('deleteBranch', () => {
-	it('deletes a branch and its descendants', () => {
+	it('deletes a branch and its descendants when siblings remain', () => {
 		const tree = createStoryTree('Test');
 		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
 		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const c = createNode(tree, tree.rootNodeId, undefined, 'C');
 		const a1 = createNode(tree, a.id, undefined, 'A1');
 
 		const deleted = deleteBranch(tree, a.id);
@@ -113,7 +114,23 @@ describe('deleteBranch', () => {
 		expect(deleted).toBe(true);
 		expect(tree.nodes[a.id]).toBeUndefined();
 		expect(tree.nodes[a1.id]).toBeUndefined();
-		expect(tree.nodes[tree.rootNodeId].childIds).toEqual([b.id]);
+		expect(tree.nodes[tree.rootNodeId].childIds).toEqual([b.id, c.id]);
+	});
+
+	it('collapses the fork when only one branch remains after deletion', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'branch a' }] }] }, 'A');
+		const b = createNode(tree, tree.rootNodeId, { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'branch b' }] }] }, 'B');
+		const b1 = createNode(tree, b.id, undefined, 'B1');
+
+		deleteBranch(tree, a.id);
+
+		// b should be merged into root, not exist as a separate node
+		expect(tree.nodes[a.id]).toBeUndefined();
+		expect(tree.nodes[b.id]).toBeUndefined();
+		// root should have b's content appended and b's children re-parented
+		expect(tree.nodes[tree.rootNodeId].childIds).toEqual([b1.id]);
+		expect(tree.nodes[b1.id].parentId).toBe(tree.rootNodeId);
 	});
 
 	it('refuses to delete the root node', () => {

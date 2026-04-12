@@ -131,6 +131,8 @@ export function addBranch(tree: StoryTree, parentId: string, label?: string): St
 /**
  * Deletes a branch and all its descendants.
  * Cannot delete the root node or the last child of a parent.
+ * If deletion leaves the parent with one child, that child is collapsed
+ * back into the parent (content merged, grandchildren re-parented).
  */
 export function deleteBranch(tree: StoryTree, nodeId: string): boolean {
 	const node = tree.nodes[nodeId];
@@ -139,16 +141,35 @@ export function deleteBranch(tree: StoryTree, nodeId: string): boolean {
 	const parent = tree.nodes[node.parentId];
 	if (parent.childIds.length <= 1) return false;
 
-	// Collect all descendant ids
+	// Collect all descendant ids of the branch being deleted
 	const toDelete = collectDescendants(tree, nodeId);
 	toDelete.push(nodeId);
 
 	// Remove from parent
 	parent.childIds = parent.childIds.filter((id) => id !== nodeId);
 
-	// Delete all
+	// Delete all nodes in this branch
 	for (const id of toDelete) {
 		delete tree.nodes[id];
+	}
+
+	// If parent now has exactly one child, collapse it into the parent
+	if (parent.childIds.length === 1) {
+		const remainingChildId = parent.childIds[0];
+		const child = tree.nodes[remainingChildId];
+
+		// Merge child content into parent
+		const parentParagraphs = parent.content.content ?? [];
+		const childParagraphs = child.content.content ?? [];
+		parent.content = { type: 'doc', content: [...parentParagraphs, ...childParagraphs] };
+
+		// Re-parent grandchildren to parent
+		for (const grandchildId of child.childIds) {
+			tree.nodes[grandchildId].parentId = parent.id;
+		}
+		parent.childIds = child.childIds;
+
+		delete tree.nodes[remainingChildId];
 	}
 
 	tree.updatedAt = Date.now();

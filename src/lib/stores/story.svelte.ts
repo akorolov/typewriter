@@ -74,6 +74,22 @@ export function createStoryStore(initial?: StoryTree) {
 		}
 
 		deleteBranch(tree, nodeId);
+
+		// Remove stale selections pointing to nodes that no longer exist
+		// (collapse may have merged the remaining child into its parent)
+		const cleaned: BranchSelections = {};
+		for (const [pId, cId] of Object.entries(selections)) {
+			if (tree.nodes[pId] && tree.nodes[cId]) {
+				cleaned[pId] = cId;
+			}
+		}
+		selections = cleaned;
+
+		// If activeNodeId was merged away, fall back to the parent node
+		if (!tree.nodes[activeNodeId]) {
+			activeNodeId = tree.nodes[parentId] ? parentId : tree.rootNodeId;
+		}
+
 		debouncedSave(tree);
 	}
 
