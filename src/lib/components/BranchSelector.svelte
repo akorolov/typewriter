@@ -116,11 +116,12 @@
 					/>
 				{:else}
 					<button
-						class="branch-tab rounded-full px-3 py-0.5 text-xs font-medium transition-all"
+						class="branch-tab rounded-full px-3 py-0.5 text-xs font-medium transition-all {node.choiceText ? 'tooltip tooltip-bottom' : ''}"
 						class:branch-tab-active={isSelected}
 						class:branch-tab-inactive={!isSelected}
 						onclick={() => onselectbranch(parentId, childId)}
 						oncontextmenu={(e) => handleContextMenu(e, childId, i)}
+						data-tip={node.choiceText || undefined}
 						title={node.label ?? `Branch ${i + 1}`}
 					>
 						{node.label ?? `Branch ${i + 1}`}
