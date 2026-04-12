@@ -12,11 +12,17 @@
 	let { store }: Props = $props();
 	let minimapOpen = $state(true);
 	let sidebarTab = $state<'map' | 'branch'>('map');
+	let highlightNodeId = $state<string | null>(null);
 
-	// Word count: sum up text content across all nodes in the current path
+	function handleEditBranch(nodeId: string) {
+		minimapOpen = true;
+		sidebarTab = 'branch';
+		highlightNodeId = nodeId;
+	}
+
+	// Word count: sum up text content across all nodes in the tree
 	const wordCount = $derived(
-		store.path.reduce((count, nodeId) => {
-			const node = store.tree.nodes[nodeId];
+		Object.values(store.tree.nodes).reduce((count, node) => {
 			const text = extractText(node.content);
 			return count + (text.trim() ? text.trim().split(/\s+/).length : 0);
 		}, 0)
@@ -109,7 +115,7 @@
 
 	<div class="flex flex-1 overflow-hidden">
 		<div class="flex-1 overflow-y-auto bg-base-100">
-			<DocumentView {store} oneditorfocus={handleEditorFocus} />
+			<DocumentView {store} oneditorfocus={handleEditorFocus} oneditbranch={handleEditBranch} />
 		</div>
 
 		{#if minimapOpen}
@@ -139,7 +145,7 @@
 					{#if sidebarTab === 'map'}
 						<Minimap {store} />
 					{:else}
-						<BranchInfo {store} />
+						<BranchInfo {store} bind:highlightNodeId />
 					{/if}
 				</div>
 			</div>

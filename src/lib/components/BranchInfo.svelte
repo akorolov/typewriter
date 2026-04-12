@@ -4,9 +4,10 @@
 
 	interface Props {
 		store: StoryStore;
+		highlightNodeId?: string | null;
 	}
 
-	let { store }: Props = $props();
+	let { store, highlightNodeId = $bindable(null) }: Props = $props();
 
 	function extractText(content: JSONContent): string {
 		if (content.text) return content.text;
@@ -40,6 +41,20 @@
 			}
 		}
 		return result;
+	});
+
+	$effect(() => {
+		const id = highlightNodeId;
+		if (!id) return;
+		setTimeout(() => {
+			const el = document.getElementById(`branch-label-${id}`);
+			if (el) {
+				el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				(el as HTMLInputElement).focus();
+				(el as HTMLInputElement).select();
+			}
+			highlightNodeId = null;
+		}, 50);
 	});
 
 	function handleCardClick(forkParentId: string, childId: string, isSelected: boolean) {
@@ -88,6 +103,7 @@
 							<div class="min-w-0 flex-1">
 								<div class="mb-0.5 text-[9px] font-semibold uppercase tracking-wider text-base-content/40">Label</div>
 								<input
+									id="branch-label-{childId}"
 									type="text"
 									class="field w-full"
 									class:field-selected={isSelected}

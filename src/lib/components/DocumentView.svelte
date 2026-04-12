@@ -7,9 +7,10 @@
 	interface Props {
 		store: StoryStore;
 		oneditorfocus?: (nodeId: string, editor: Editor) => void;
+		oneditbranch?: (nodeId: string) => void;
 	}
 
-	let { store, oneditorfocus }: Props = $props();
+	let { store, oneditorfocus, oneditbranch }: Props = $props();
 
 	function handleUpdate(nodeId: string, content: JSONContent) {
 		store.updateContent(nodeId, content);
@@ -48,6 +49,7 @@
 				onaddbranch={handleAddBranch}
 				onremovebranch={handleRemoveBranch}
 				onrename={handleRename}
+				onedit={oneditbranch}
 			/>
 		{/if}
 

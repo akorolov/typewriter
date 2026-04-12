@@ -10,9 +10,10 @@
 		onaddbranch?: (parentId: string) => void;
 		onremovebranch?: (nodeId: string) => void;
 		onrename?: (nodeId: string, label: string) => void;
+		onedit?: (nodeId: string) => void;
 	}
 
-	let { tree, parentId, selections, onselectbranch, onaddbranch, onremovebranch, onrename }: Props =
+	let { tree, parentId, selections, onselectbranch, onaddbranch, onremovebranch, onrename, onedit }: Props =
 		$props();
 
 	const parent = $derived(tree.nodes[parentId]);
@@ -151,6 +152,15 @@
 		style="left: {contextMenu.x}px; top: {contextMenu.y}px;"
 		role="menu"
 	>
+		{#if onedit}
+			<button
+				class="context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-base-200"
+				role="menuitem"
+				onclick={() => { onselectbranch(parentId, menuChildId); onedit(menuChildId); closeContextMenu(); }}
+			>
+				Edit
+			</button>
+		{/if}
 		<button
 			class="context-menu-item flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-base-200"
 			role="menuitem"
