@@ -1,6 +1,6 @@
 # Typewriter
 
-Branching narrative word processor built with SvelteKit, TipTap, and DaisyUI.
+Branching narrative word processor built with SvelteKit, TipTap, and DaisyUI. Designed for writing interactive fiction.
 
 ## Stack
 

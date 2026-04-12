@@ -21,6 +21,7 @@ Planned features:
 - [ ] Additional UI improvements
 - [ ] Adding help hints, a tutorial, other onboarding
 - [ ] Let branches recombine
+    - [ ] Update how the player choice option works so that different nodes that lead to the same branch can have different player choices. 
 - [ ] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
 - [ ] Templates/reusable blocks
 - [ ] Table of contents
