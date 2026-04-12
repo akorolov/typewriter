@@ -2,7 +2,7 @@
 	import type { StoryStore } from '../stores/story.svelte.js';
 	import type { JSONContent } from '@tiptap/core';
 	import NodeEditor from './NodeEditor.svelte';
-	import ForkZone from './ForkZone.svelte';
+	import BranchSelector from './BranchSelector.svelte';
 
 	interface Props {
 		store: StoryStore;
@@ -18,11 +18,13 @@
 		store.selectBranch(parentId, childId);
 	}
 
-	/**
-	 * Renders the path as a sequence of nodes.
-	 * At each fork point (node with multiple children), insert a ForkZone.
-	 * Nodes without siblings render inline as editable.
-	 */
+	function handleAddBranch(parentId: string) {
+		store.addSiblingBranch(parentId);
+	}
+
+	function handleRemoveBranch(nodeId: string) {
+		store.removeBranch(nodeId);
+	}
 </script>
 
 <div class="document-view mx-auto w-full max-w-3xl px-4 py-8">
@@ -31,34 +33,31 @@
 		{@const parent = node.parentId ? store.tree.nodes[node.parentId] : null}
 		{@const isFork = parent && parent.childIds.length > 1}
 
+		<!-- Show branch selector before a forked node -->
 		{#if isFork && node.parentId}
-			<!-- This node is part of a fork — rendered inside a ForkZone above -->
-		{:else}
-			<!-- Regular node, render inline -->
-			<div
-				class="node-block"
-				role="button"
-				tabindex="0"
-				onclick={() => store.setActiveNode(nodeId)}
-				onkeydown={() => {}}
-			>
-				<NodeEditor
-					content={node.content}
-					onupdate={(content) => handleUpdate(nodeId, content)}
-					placeholder={i === 0 ? 'Begin your story...' : 'Continue writing...'}
-				/>
-			</div>
-		{/if}
-
-		<!-- If this node has multiple children, show a ForkZone after it -->
-		{#if node.childIds.length > 1}
-			<ForkZone
+			<BranchSelector
 				tree={store.tree}
-				parentId={nodeId}
+				parentId={node.parentId}
 				selections={store.selections}
 				onselectbranch={handleSelectBranch}
-				onupdatecontent={handleUpdate}
+				onaddbranch={handleAddBranch}
+				onremovebranch={handleRemoveBranch}
 			/>
 		{/if}
+
+		<!-- Render every node inline -->
+		<div
+			class="node-block"
+			role="button"
+			tabindex="0"
+			onclick={() => store.setActiveNode(nodeId)}
+			onkeydown={() => {}}
+		>
+			<NodeEditor
+				content={node.content}
+				onupdate={(content) => handleUpdate(nodeId, content)}
+				placeholder={i === 0 ? 'Begin your story...' : 'Continue writing...'}
+			/>
+		</div>
 	{/each}
 </div>
