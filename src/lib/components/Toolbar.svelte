@@ -4,12 +4,13 @@
 	interface Props {
 		editor: Editor | null;
 		onbranch: () => void;
+		onexport: () => void;
 		title: string;
 		onupdatetitle: (title: string) => void;
 		wordCount: number;
 	}
 
-	let { editor, onbranch, title, onupdatetitle, wordCount }: Props = $props();
+	let { editor, onbranch, onexport, title, onupdatetitle, wordCount }: Props = $props();
 
 	function toggleFormat(command: string) {
 		if (!editor) return;
@@ -139,6 +140,30 @@
 			</button>
 		{/each}
 	{/each}
+
+	<div class="mx-1.5 h-5 w-px bg-base-300"></div>
+
+	<div class="dropdown dropdown-bottom">
+		<button tabindex="0" class="btn btn-ghost btn-xs gap-1" title="Export story">
+			<span class="material-symbols-outlined" style="font-size: 16px;">file_export</span>
+			Export
+		</button>
+		<ul
+			class="dropdown-content menu bg-base-100 rounded-box z-10 w-44 p-1 shadow-md border border-base-300 text-sm"
+		>
+			<li>
+				<button
+					onclick={() => {
+						onexport();
+						(document.activeElement as HTMLElement)?.blur();
+					}}
+				>
+					<span class="material-symbols-outlined" style="font-size: 15px;">download</span>
+					Twine 2 / Twee 3
+				</button>
+			</li>
+		</ul>
+	</div>
 
 	<div class="mx-1.5 h-5 w-px bg-base-300"></div>
 

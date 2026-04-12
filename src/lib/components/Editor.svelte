@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
+	import { downloadTwee } from '../export/twine.js';
 	import Toolbar from './Toolbar.svelte';
 	import DocumentView from './DocumentView.svelte';
 	import Minimap from './Minimap.svelte';
@@ -108,6 +109,7 @@
 	<Toolbar
 		editor={activeEditor}
 		onbranch={handleBranch}
+		onexport={() => downloadTwee($state.snapshot(store.tree))}
 		title={store.tree.title}
 		onupdatetitle={(t) => store.updateTitle(t)}
 		{wordCount}
