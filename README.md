@@ -15,15 +15,16 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 ## Roadmap
 
 Planned features:
-- Export to Twine for build and deployment
-- Potentially: export to renpy as well, although renpy has a different interactive fiction ethos. 
-- Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. 
-- Additional UI improvements
-- Adding help hints, a tutorial, other onboarding
-- Let branches recombine
-- Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
-- Templates/reusable blocks
-- Table of contents
+- [ ] Export to Twine for build and deployment
+- [ ] Potentially: export to renpy as well, although renpy has a different interactive fiction ethos. 
+- [ ] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. 
+- [ ] Additional UI improvements
+- [ ] Adding help hints, a tutorial, other onboarding
+- [ ] Let branches recombine
+- [ ] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
+- [ ] Templates/reusable blocks
+- [ ] Table of contents
+- [ ] Dark mode, other themes
 
 
 ## FAQ
