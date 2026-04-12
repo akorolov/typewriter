@@ -15,7 +15,7 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 ## Roadmap
 
 Planned features:
-- [ ] Export to Twine for build and deployment
+- [x] Export to Twine for build and deployment
 - [ ] Potentially: export to renpy as well, although renpy has a different interactive fiction ethos. 
 - [ ] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
 - [ ] Additional UI improvements
