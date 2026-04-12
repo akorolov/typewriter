@@ -38,4 +38,6 @@ Your data is stored in your own browser local storage. There is no cloud storage
 
 More specifically, the app uses IndexedDB. Read more about it here: https://developer.mozilla.org/en-US/docs/Web/API/IndexedDB_API
 
+### Is there any AI in this?
 
+I used Claude Code to write the app, but the app itself does not use AI or have any AI features. The example story in the screenshots above does not include any generative AI (as you can probably tell...)
