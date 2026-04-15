@@ -36,13 +36,14 @@ Planned features:
 - [ ] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
 - [ ] Additional UI improvements
 - [ ] Adding help hints, a tutorial, other onboarding
-- [ ] Let branches recombine
+- [x] Let branches recombine
     - [x] Almost done, but currently there's a bug where you can't switch branches nicely between a merged branch and a regular branch in the editor (but you can in the minimap).
     - [x] Also need to add in the functionality to switch to a branch path by clicking the pathway, i.e. so that you can open up the merged path 
-    - [ ] Update how the player choice option works so that different nodes that lead to the same branch can have different player choices. 
+- [ ] Update how the player choice option works so that different nodes that lead to the same branch can have different player choices. 
 - [ ] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
 - [ ] Templates/reusable blocks
-- [ ] Table of contents
+- [x] Table of contents
+- [ ] Make outline look better/clean up sidebar
 - [ ] Dark mode, other themes
 - [ ] Automatic exports (for backup purposes)
 - [x] Open up minimap into a bigger view
