@@ -7,6 +7,7 @@
 	import Minimap from './Minimap.svelte';
 	import StoryMapModal from './StoryMapModal.svelte';
 	import BranchInfo from './BranchInfo.svelte';
+	import Outline from './Outline.svelte';
 
 	interface Props {
 		store: StoryStore;
@@ -14,7 +15,7 @@
 
 	let { store }: Props = $props();
 	let minimapOpen = $state(true);
-	let sidebarTab = $state<'map' | 'branch'>('map');
+	let sidebarTab = $state<'map' | 'branch' | 'outline'>('map');
 	let highlightNodeId = $state<string | null>(null);
 	let mergeSourceId = $state<string | null>(null);
 	let mapModalOpen = $state(false);
@@ -165,6 +166,12 @@
 						Branch Info
 					</button>
 					<button
+						class="flex-1 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors {sidebarTab === 'outline' ? 'border-primary text-base-content' : 'border-transparent text-base-content/50'}"
+						onclick={() => (sidebarTab = 'outline')}
+					>
+						Outline
+					</button>
+					<button
 						class="btn btn-ghost btn-xs px-2"
 						onclick={() => (mapModalOpen = true)}
 						title="Expand story map"
@@ -182,8 +189,10 @@
 				<div class="min-h-0 flex-1 overflow-y-auto">
 					{#if sidebarTab === 'map'}
 						<Minimap {store} {mergeSourceId} onmergetarget={handleMergeTarget} oncancelmerge={handleCancelMerge} />
-					{:else}
+					{:else if sidebarTab === 'branch'}
 						<BranchInfo {store} bind:highlightNodeId />
+					{:else}
+						<Outline {store} {focusedNodeId} />
 					{/if}
 				</div>
 			</div>

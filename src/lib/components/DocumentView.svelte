@@ -77,6 +77,7 @@
 		<!-- Render every node inline -->
 		<div
 			class="node-block"
+			data-node-id={nodeId}
 			role="button"
 			tabindex="0"
 			onclick={() => store.setActiveNode(nodeId)}
