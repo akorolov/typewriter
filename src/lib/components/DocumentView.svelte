@@ -42,13 +42,18 @@
 		{@const arrivedViaMerge = prevNodeId != null && (store.tree.nodes[prevNodeId]?.mergeChildIds ?? []).includes(nodeId)}
 
 		{#if arrivedViaMerge && prevNodeId}
-			<!-- Show the fork selector from the node that offered the merge choice (read-only merge-point style) -->
+			<!-- Show the fork selector from the node that offered the merge choice -->
 			<BranchSelector
 				tree={store.tree}
 				parentId={prevNodeId}
 				selections={store.selections}
 				onselectbranch={handleSelectBranch}
-				mergePoint={true}
+				onaddbranch={handleAddBranch}
+				onremovebranch={handleRemoveBranch}
+				onrename={handleRename}
+				onedit={oneditbranch}
+				onmergestart={onmergestart}
+				onclearmerge={(parentId, targetId) => store.clearMergeChild(parentId, targetId)}
 			/>
 		{:else if node.parentId}
 			{@const parent = store.tree.nodes[node.parentId]}

@@ -56,6 +56,20 @@
 		store.setActiveNode(nodeId);
 	}
 
+	function handleMergeEdgeClick(fromId: string, toId: string) {
+		if (mergeSourceId) return;
+		// Navigate to the fork node's ancestors first, then select the merge child
+		const ancestry = getAncestry(fromId);
+		for (const id of ancestry) {
+			const node = store.tree.nodes[id];
+			if (node.parentId) {
+				store.selectBranch(node.parentId, id);
+			}
+		}
+		store.selectBranch(fromId, toId);
+		store.setActiveNode(toId);
+	}
+
 	function getAncestry(nodeId: string): string[] {
 		const path: string[] = [];
 		let current: string | null = nodeId;
@@ -110,13 +124,28 @@
 				{@const to = layout.nodes.find((n) => n.id === edge.toId)}
 				{#if from && to}
 					{@const bow = Math.max(40, Math.abs(to.x - from.x) + 30)}
+					{@const d = `M ${from.x} ${from.y} C ${from.x + bow} ${from.y}, ${to.x + bow} ${to.y}, ${to.x + NODE_RADIUS} ${to.y}`}
+					<!-- Invisible wider hit area -->
 					<path
-						d="M {from.x} {from.y} C {from.x + bow} {from.y}, {to.x + bow} {to.y}, {to.x + NODE_RADIUS} {to.y}"
+						{d}
+						fill="none"
+						stroke="transparent"
+						stroke-width="12"
+						class="cursor-pointer"
+						onclick={() => handleMergeEdgeClick(edge.fromId, edge.toId)}
+						role="button"
+						tabindex="0"
+						onkeydown={(e) => e.key === 'Enter' && handleMergeEdgeClick(edge.fromId, edge.toId)}
+					/>
+					<!-- Visible dashed arrow -->
+					<path
+						{d}
 						fill="none"
 						stroke="oklch(from var(--color-secondary) l c h)"
 						stroke-width="1.5"
 						stroke-dasharray="4 3"
 						marker-end="url(#merge-arrow)"
+						class="pointer-events-none"
 					/>
 				{/if}
 			{/each}
