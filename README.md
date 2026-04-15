@@ -1,5 +1,7 @@
 # typewriter
 
+**Current version: 0.2.2**
+
 An editor for creating branching narrative games. Try it out at typewriter.akorl.xyz
 
 Typewriter lets you write interactive fiction one full branch at a time. Write the entire story end to end, and then go back and add additional branches. Or build out branches as you go. 
@@ -11,6 +13,19 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 ![Example 2](docs/example2.jpg)
 
 ![Example 3](docs/example3.jpg)
+
+## Recent Changes
+
+### v0.2.2 (2026-04-14)
+- Export current branch as markdown
+- Expanded story map view
+- Branch merging improvements
+
+### v0.2.1 (2026-04-12)
+- Allow branches to recombine
+
+### v0.2.0 (2026-04-10)
+- Export to Twine format
 
 ## Roadmap
 

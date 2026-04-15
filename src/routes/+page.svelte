@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { listStories, deleteStory } from '$lib/persistence/indexeddb.js';
 	import type { StoryTree } from '$lib/models/story.js';
+	import { VERSION, changelog } from '$lib/version.js';
 
 	let stories = $state<StoryTree[]>([]);
 	let loading = $state(true);
@@ -43,7 +44,10 @@
 <div class="flex h-full flex-col items-center justify-center p-8">
 	<div class="w-full max-w-2xl">
 		<div class="mb-8 text-center">
-			<h1 class="mb-2 text-4xl font-bold text-base-content">Typewriter</h1>
+			<h1 class="mb-2 inline-flex items-center gap-3 text-4xl font-bold text-base-content">
+				Typewriter
+				<span class="badge badge-outline badge-sm rounded-full text-base-content/40 font-normal">v{VERSION}</span>
+			</h1>
 			<p class="text-base-content/60">A branching narrative editor for interactive fiction</p>
 			<a
 				href="https://github.com/akorolov/typewriter"
@@ -102,5 +106,26 @@
 				{/each}
 			</div>
 		{/if}
+
+		<div class="divider mt-12"></div>
+
+		<details class="collapse collapse-arrow bg-base-200">
+			<summary class="collapse-title text-sm font-medium">Recent Changes</summary>
+			<div class="collapse-content">
+				{#each changelog as entry}
+					<div class="mb-4 last:mb-0">
+						<h3 class="text-sm font-semibold">
+							v{entry.version}
+							<span class="ml-2 text-xs font-normal text-base-content/50">{entry.date}</span>
+						</h3>
+						<ul class="ml-4 mt-1 list-disc text-xs text-base-content/70">
+							{#each entry.changes as change}
+								<li>{change}</li>
+							{/each}
+						</ul>
+					</div>
+				{/each}
+			</div>
+		</details>
 	</div>
 </div>
