@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
-import type { StoryTree } from '../models/story.js';
+import type { BranchSelections, StoryTree } from '../models/story.js';
+import { resolvePath } from '../models/path.js';
 
 type Mark = { type: string; attrs?: Record<string, unknown> };
 
@@ -214,6 +215,126 @@ export function downloadJson(tree: StoryTree): void {
 	const a = document.createElement('a');
 	a.href = url;
 	a.download = `${storyFilename(tree.title)}.json`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
+// --- Markdown export (current branch) ---
+
+function inlineToMarkdown(node: JSONContent): string {
+	if (node.type === 'text') {
+		let text = node.text ?? '';
+		for (const mark of (node.marks as Mark[] | undefined) ?? []) {
+			switch (mark.type) {
+				case 'bold':
+					text = `**${text}**`;
+					break;
+				case 'italic':
+					text = `*${text}*`;
+					break;
+				case 'underline':
+					text = `<u>${text}</u>`;
+					break;
+				case 'strike':
+					text = `~~${text}~~`;
+					break;
+				case 'code':
+					text = `\`${text}\``;
+					break;
+			}
+		}
+		return text;
+	}
+	if (node.type === 'hardBreak') return '\n';
+	if (node.type === 'image') return '';
+	return (node.content ?? []).map(inlineToMarkdown).join('');
+}
+
+function blockToMarkdown(node: JSONContent): string {
+	switch (node.type) {
+		case 'paragraph':
+			return (node.content ?? []).map(inlineToMarkdown).join('');
+
+		case 'heading': {
+			const level = (node.attrs?.level as number) ?? 1;
+			return '#'.repeat(level) + ' ' + (node.content ?? []).map(inlineToMarkdown).join('');
+		}
+
+		case 'bulletList':
+			return (node.content ?? [])
+				.map((item) => {
+					const text = (item.content ?? []).map(blockToMarkdown).join('\n').trim();
+					return `- ${text}`;
+				})
+				.join('\n');
+
+		case 'orderedList':
+			return (node.content ?? [])
+				.map((item, i) => {
+					const text = (item.content ?? []).map(blockToMarkdown).join('\n').trim();
+					return `${i + 1}. ${text}`;
+				})
+				.join('\n');
+
+		case 'listItem':
+			return (node.content ?? []).map(blockToMarkdown).join(' ');
+
+		case 'blockquote':
+			return (node.content ?? [])
+				.map(blockToMarkdown)
+				.flatMap((s) => s.split('\n'))
+				.map((line) => `> ${line}`)
+				.join('\n');
+
+		case 'horizontalRule':
+			return '---';
+
+		case 'codeBlock': {
+			const code = (node.content ?? []).map((n) => n.text ?? '').join('');
+			return '```\n' + code + '\n```';
+		}
+
+		case 'doc':
+			return (node.content ?? [])
+				.map(blockToMarkdown)
+				.filter(Boolean)
+				.join('\n\n');
+
+		default:
+			return (node.content ?? []).map(blockToMarkdown).join('\n\n');
+	}
+}
+
+/**
+ * Exports the current branch (resolved path) as a single Markdown document.
+ * Concatenates each node's content in path order, separated by blank lines.
+ */
+export function exportToMarkdown(tree: StoryTree, selections: BranchSelections): string {
+	const path = resolvePath(tree, selections);
+	const parts: string[] = [];
+
+	parts.push(`# ${tree.title}`);
+
+	for (const nodeId of path) {
+		const node = tree.nodes[nodeId];
+		if (!node) continue;
+		const text = blockToMarkdown(node.content).trim();
+		if (text) parts.push(text);
+	}
+
+	return parts.join('\n\n');
+}
+
+/**
+ * Triggers a browser download of the current branch as a .md file.
+ */
+export function downloadMarkdown(tree: StoryTree, selections: BranchSelections): void {
+	const content = exportToMarkdown(tree, selections);
+	const blob = new Blob([content], { type: 'text/markdown' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `${storyFilename(tree.title)}.md`;
 	a.click();
 	URL.revokeObjectURL(url);
 }

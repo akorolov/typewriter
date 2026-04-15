@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
 	import { getAllChoices } from '../models/path.js';
-	import { downloadTwee, downloadJson } from '../export/twine.js';
+	import { downloadTwee, downloadJson, downloadMarkdown } from '../export/twine.js';
 	import Toolbar from './Toolbar.svelte';
 	import DocumentView from './DocumentView.svelte';
 	import Minimap from './Minimap.svelte';
@@ -138,6 +138,7 @@
 		onbranch={handleBranch}
 		onexport={() => downloadTwee($state.snapshot(store.tree))}
 		onexportjson={() => downloadJson($state.snapshot(store.tree))}
+		onexportmarkdown={() => downloadMarkdown($state.snapshot(store.tree), $state.snapshot(store.selections))}
 		title={store.tree.title}
 		onupdatetitle={(t) => store.updateTitle(t)}
 		{wordCount}

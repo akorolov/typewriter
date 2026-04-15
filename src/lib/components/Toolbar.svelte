@@ -6,12 +6,13 @@
 		onbranch: () => void;
 		onexport: () => void;
 		onexportjson: () => void;
+		onexportmarkdown: () => void;
 		title: string;
 		onupdatetitle: (title: string) => void;
 		wordCount: number;
 	}
 
-	let { editor, onbranch, onexport, onexportjson, title, onupdatetitle, wordCount }: Props = $props();
+	let { editor, onbranch, onexport, onexportjson, onexportmarkdown, title, onupdatetitle, wordCount }: Props = $props();
 
 	function toggleFormat(command: string) {
 		if (!editor) return;
@@ -161,6 +162,17 @@
 				>
 					<span class="material-symbols-outlined" style="font-size: 15px;">download</span>
 					Twine 2 / Twee 3
+				</button>
+			</li>
+			<li>
+				<button
+					onclick={() => {
+						onexportmarkdown();
+						(document.activeElement as HTMLElement)?.blur();
+					}}
+				>
+					<span class="material-symbols-outlined" style="font-size: 15px;">download</span>
+					Export Current Branch
 				</button>
 			</li>
 			<li>
