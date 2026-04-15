@@ -113,6 +113,9 @@
 </script>
 
 <div class="toolbar flex items-center gap-0.5 border-b border-base-300 bg-base-200 px-3 py-1">
+	<a href="/" class="btn btn-ghost btn-xs min-h-0 h-7 w-7 p-0" title="Back to home">
+		<span class="material-symbols-outlined" style="font-size: 18px;">arrow_left_alt</span>
+	</a>
 	<input
 		type="text"
 		class="input input-ghost input-sm mr-2 w-44 font-semibold"

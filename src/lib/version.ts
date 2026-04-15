@@ -13,7 +13,8 @@ export const changelog: ChangelogEntry[] = [
 		changes: [
 			'Export current branch as markdown',
 			'Expanded story map view',
-			'Branch merging improvements'
+			'Branch merging improvements',
+			'Added back button from editor'
 		]
 	},
 	{

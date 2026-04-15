@@ -20,6 +20,7 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 - Export current branch as markdown
 - Expanded story map view
 - Branch merging improvements
+- Added back button from editor
 
 ### v0.2.1 (2026-04-12)
 - Allow branches to recombine
