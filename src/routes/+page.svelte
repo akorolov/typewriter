@@ -44,7 +44,7 @@
 <div class="flex h-full flex-col items-center justify-center p-8">
 	<div class="w-full max-w-2xl">
 		<div class="mb-8 text-center">
-			<h1 class="mb-2 inline-flex items-center gap-3 text-4xl font-bold text-base-content">
+			<h1 class="mb-2 inline-flex items-baseline gap-3 text-4xl font-bold text-base-content">
 				Typewriter
 				<span class="badge badge-outline badge-sm rounded-full text-base-content/40 font-normal">v{VERSION}</span>
 			</h1>
