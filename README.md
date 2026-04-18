@@ -46,7 +46,7 @@ Planned features:
     - [x] Almost done, but currently there's a bug where you can't switch branches nicely between a merged branch and a regular branch in the editor (but you can in the minimap).
     - [x] Also need to add in the functionality to switch to a branch path by clicking the pathway, i.e. so that you can open up the merged path 
 - [ ] Update how the player choice option works so that different nodes that lead to the same branch can have different player choices. 
-- [ ] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
+- [x] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
 - [ ] Templates/reusable blocks
 - [x] Table of contents
 - [x] Make outline look better/clean up sidebar
@@ -56,6 +56,50 @@ Planned features:
 - [ ] Add markers/placeholders/bookmarks
 - [x] Fix: merged branches don't show up in the branch info tab
 - [ ] Allow conditionals to be attached to branch choices
+
+## Using Variables
+
+Twine offers the ability to use variables within stories, so there is basic functionality to set and track variables here as well. 
+
+### Defining variables
+
+In the variables tab in the side panel, you can define variables and choose string, number, or boolean (true/false). 
+
+### Referencing a variable in text
+
+Type `$` anywhere in the editor to open the variable autocomplete. Select a variable to insert a variable chip into your text. When exported, the chip becomes a live Harlowe variable reference that interpolates the current value.
+
+### Setting a variable on a player choice
+
+Open the branch info panel and find the branch you want. Under each player choice there is a variable effects section. Click add effect, choose a variable, and enter the value or expression to set when the player picks that choice.
+
+The value field accepts raw Harlowe expressions, so you can write literal values or compute from the current state:
+
+| Variable type | Example value | What it does |
+|---|---|---|
+| boolean | `true` | Sets the variable to true |
+| boolean | `invert` | Toggles the variable to its opposite |
+| number | `5` | Sets to a number |
+| number | `$score + 10` | Increments by 10 |
+| string | `"Alice"` | Sets to a string |
+| string | `$name + " and Henry"` | Appends a string |
+
+### How this exports to Twine
+
+When you export to `.twee` (Harlowe format):
+
+- A `StoryInit [startup]` passage is generated that sets all variables to their default values before the story begins.
+- Variable chips in text export as `$variableName` — Harlowe interpolates them automatically.
+- Branch effects with no variable effects export as standard `[[Choice->Passage]]` links.
+- Branch effects *with* variable effects export using Harlowe's link macro so the variables are set at the moment the player clicks:
+
+```
+(link: "Take the sword")[(set: $hasSword to true)(go-to: "Forest Path")]
+```
+
+## Find and Replace
+
+Use **Cmd+H** (MacOS) or **Ctrl+H** (Windows/Linux) to open Find & Replace. You can search for any text across all passages and replace it with either plain text or a variable chip.
 
 ## FAQ
 

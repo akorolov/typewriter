@@ -179,11 +179,12 @@
 											<select
 												class="effect-select flex-1"
 												value={String(effect.value)}
-												onchange={(e) => { updateEffect(fork.parentId, childId, idx, { value: e.currentTarget.value === 'true' }); e.stopPropagation(); }}
+												onchange={(e) => { const v = e.currentTarget.value; updateEffect(fork.parentId, childId, idx, { value: v === '__invert__' ? '__invert__' : v === 'true' }); e.stopPropagation(); }}
 												onclick={(e) => e.stopPropagation()}
 											>
 												<option value="false">false</option>
 												<option value="true">true</option>
+												<option value="__invert__">invert</option>
 											</select>
 										{:else}
 											<input

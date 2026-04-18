@@ -144,6 +144,10 @@ function harloweValue(value: string | number | boolean, isNumber = false): strin
 }
 
 function harloweSetMacro(variableName: string, value: string | number | boolean, tree: StoryTree, rawExpression = false): string {
+	// Boolean invert sentinel: (set: $flag to (not: $flag))
+	if (value === '__invert__') {
+		return `(set: $${variableName} to (not: $${variableName}))`;
+	}
 	// Branch effects are raw Harlowe expressions (unquoted) so $var + 1 and $var + " text" work.
 	// Default values in StoryInit use typed quoting.
 	const isNumber = tree.variables?.[variableName]?.type === 'number';
