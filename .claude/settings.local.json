@@ -16,7 +16,8 @@
       "Bash(npm run:*)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
       "Bash(wc -l /Users/anastasia/Documents/Projects/typewriter/src/lib/models/*.ts /Users/anastasia/Documents/Projects/typewriter/src/lib/stores/*.ts /Users/anastasia/Documents/Projects/typewriter/src/lib/components/*.svelte)",
-      "Bash(npx tsc *)"
+      "Bash(npx tsc *)",
+      "mcp__daisyui_Docs__search_daisyui_documentation"
     ]
   }
 }

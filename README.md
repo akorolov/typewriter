@@ -34,7 +34,7 @@ Planned features:
 - [x] Export to Twine for build and deployment
 - [ ] Potentially: export to renpy as well, although renpy has a different interactive fiction ethos. 
 - [ ] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
-- [ ] Additional UI improvements
+- [ ] First round of UI improvements
 - [ ] Adding help hints, a tutorial, other onboarding
 - [x] Let branches recombine
     - [x] Almost done, but currently there's a bug where you can't switch branches nicely between a merged branch and a regular branch in the editor (but you can in the minimap).

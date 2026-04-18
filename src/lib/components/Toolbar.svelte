@@ -195,8 +195,8 @@
 	<div class="mx-1.5 h-5 w-px bg-base-300"></div>
 
 	<button
-		class="btn btn-primary btn-xs gap-1"
-		title="Create new branch (splits at current paragraph)"
+		class="btn btn-primary btn-xs gap-1 border-0 shadow-none outline outline-1 outline-secondary outline-offset-0"
+		title="Create new branch (splits after current paragraph)"
 		onclick={onbranch}
 	>
 		<span class="material-symbols-outlined" style="font-size: 16px;">arrow_split</span>
