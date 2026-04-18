@@ -14,8 +14,17 @@
 	}
 
 	let { store }: Props = $props();
+
+	const sidebarTabs = [
+		{ id: 'map', label: 'Story Map', icon: 'map' },
+		{ id: 'branch', label: 'Branch Info', icon: 'account_tree' },
+		{ id: 'outline', label: 'Outline', icon: 'toc' }
+	] as const;
+	type SidebarTabId = (typeof sidebarTabs)[number]['id'];
+
 	let minimapOpen = $state(true);
-	let sidebarTab = $state<'map' | 'branch' | 'outline'>('map');
+	let sidebarTab = $state<SidebarTabId>('map');
+	const activeTab = $derived(sidebarTabs.find((t) => t.id === sidebarTab)!);
 	let highlightNodeId = $state<string | null>(null);
 	let mergeSourceId = $state<string | null>(null);
 	let mapModalOpen = $state(false);
@@ -151,49 +160,50 @@
 		</div>
 
 		{#if minimapOpen}
-			<div class="flex w-64 shrink-0 flex-col border-l border-base-300 bg-base-200">
-				<div class="flex items-center border-b border-base-300">
-					<button
-						class="flex-1 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors {sidebarTab === 'map' ? 'border-primary text-base-content' : 'border-transparent text-base-content/50'}"
-						onclick={() => (sidebarTab = 'map')}
-					>
-						Story Map
-					</button>
-					<button
-						class="flex-1 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors {sidebarTab === 'branch' ? 'border-primary text-base-content' : 'border-transparent text-base-content/50'}"
-						onclick={() => (sidebarTab = 'branch')}
-					>
-						Branch Info
-					</button>
-					<button
-						class="flex-1 border-b-2 px-3 py-1.5 text-xs font-medium transition-colors {sidebarTab === 'outline' ? 'border-primary text-base-content' : 'border-transparent text-base-content/50'}"
-						onclick={() => (sidebarTab = 'outline')}
-					>
-						Outline
-					</button>
-					<button
-						class="btn btn-ghost btn-xs px-2"
-						onclick={() => (mapModalOpen = true)}
-						title="Expand story map"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
-					</button>
-					<button
-						class="btn btn-ghost btn-xs px-2"
-						onclick={() => (minimapOpen = false)}
-						title="Close sidebar"
-					>
-						&times;
-					</button>
+			<div class="flex w-72 shrink-0 border-l border-base-300 bg-base-200">
+				<div class="flex w-10 shrink-0 flex-col border-r border-base-300 py-1">
+					{#each sidebarTabs as tab (tab.id)}
+						<div class="tooltip tooltip-right" data-tip={tab.label}>
+							<button
+								class="flex h-10 w-10 cursor-pointer items-center justify-center border-r-2 transition-colors {sidebarTab === tab.id ? 'border-primary bg-base-100 text-base-content' : 'border-transparent text-base-content/50 hover:bg-base-100/50 hover:text-base-content'}"
+								onclick={() => (sidebarTab = tab.id)}
+								aria-label={tab.label}
+								aria-pressed={sidebarTab === tab.id}
+							>
+								<span class="material-symbols-outlined" style="font-size: 20px;">{tab.icon}</span>
+							</button>
+						</div>
+					{/each}
 				</div>
-				<div class="min-h-0 flex-1 overflow-y-auto">
-					{#if sidebarTab === 'map'}
-						<Minimap {store} {mergeSourceId} onmergetarget={handleMergeTarget} oncancelmerge={handleCancelMerge} />
-					{:else if sidebarTab === 'branch'}
-						<BranchInfo {store} bind:highlightNodeId />
-					{:else}
-						<Outline {store} {focusedNodeId} />
-					{/if}
+				<div class="flex min-w-0 flex-1 flex-col">
+					<div class="flex items-center border-b border-base-300 py-1 pl-3 pr-1">
+						<span class="flex-1 text-xs font-medium">{activeTab.label}</span>
+						{#if sidebarTab === 'map'}
+							<button
+								class="btn btn-ghost btn-xs px-2"
+								onclick={() => (mapModalOpen = true)}
+								title="Expand story map"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+							</button>
+						{/if}
+						<button
+							class="btn btn-ghost btn-xs px-2"
+							onclick={() => (minimapOpen = false)}
+							title="Close sidebar"
+						>
+							&times;
+						</button>
+					</div>
+					<div class="min-h-0 flex-1 overflow-y-auto">
+						{#if sidebarTab === 'map'}
+							<Minimap {store} {mergeSourceId} onmergetarget={handleMergeTarget} oncancelmerge={handleCancelMerge} />
+						{:else if sidebarTab === 'branch'}
+							<BranchInfo {store} bind:highlightNodeId />
+						{:else}
+							<Outline {store} {focusedNodeId} />
+						{/if}
+					</div>
 				</div>
 			</div>
 		{:else}
