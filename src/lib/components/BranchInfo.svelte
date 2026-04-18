@@ -192,7 +192,7 @@
 												class:field-selected={isSelected}
 												class:field-other={!isSelected}
 												value={String(effect.value)}
-												placeholder={store.tree.variables?.[effect.variableName]?.type === 'number' ? '0 or $var + 1' : 'value'}
+												placeholder={store.tree.variables?.[effect.variableName]?.type === 'number' ? '0 or $var + 1' : store.tree.variables?.[effect.variableName]?.type === 'string' ? '"text" or $var + " more"' : 'value'}
 												oninput={(e) => updateEffect(fork.parentId, childId, idx, { value: e.currentTarget.value })}
 												onclick={(e) => e.stopPropagation()}
 												onkeydown={(e) => e.stopPropagation()}

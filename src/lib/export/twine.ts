@@ -143,9 +143,12 @@ function harloweValue(value: string | number | boolean, isNumber = false): strin
 	return `"${String(value).replace(/"/g, '\\"')}"`;
 }
 
-function harloweSetMacro(variableName: string, value: string | number | boolean, tree: StoryTree): string {
+function harloweSetMacro(variableName: string, value: string | number | boolean, tree: StoryTree, rawExpression = false): string {
+	// Branch effects are raw Harlowe expressions (unquoted) so $var + 1 and $var + " text" work.
+	// Default values in StoryInit use typed quoting.
 	const isNumber = tree.variables?.[variableName]?.type === 'number';
-	return `(set: $${variableName} to ${harloweValue(value, isNumber)})`;
+	const formatted = rawExpression ? String(value) : harloweValue(value, isNumber);
+	return `(set: $${variableName} to ${formatted})`;
 }
 
 /**
@@ -193,7 +196,7 @@ export function exportToTwee(tree: StoryTree): string {
 			const childId = allChoices[0];
 			const effects = getEdge(tree, id, childId)?.variableEffects ?? [];
 			if (effects.length > 0) {
-				const setMacros = effects.map((e) => harloweSetMacro(e.variableName, e.value, tree)).join('');
+				const setMacros = effects.map((e) => harloweSetMacro(e.variableName, e.value, tree, true)).join('');
 				links.push(`${setMacros}[[${names.get(childId)!}]]`);
 			} else {
 				links.push(`[[${names.get(childId)!}]]`);
@@ -206,7 +209,7 @@ export function exportToTwee(tree: StoryTree): string {
 				const linkText = edge?.choiceText?.trim() || childName;
 				const effects = edge?.variableEffects ?? [];
 				if (effects.length > 0) {
-					const setMacros = effects.map((e) => harloweSetMacro(e.variableName, e.value, tree)).join('');
+					const setMacros = effects.map((e) => harloweSetMacro(e.variableName, e.value, tree, true)).join('');
 					links.push(`(link: "${linkText}")[${setMacros}(go-to: "${childName}")]`);
 				} else {
 					links.push(`[[${linkText}->${childName}]]`);
