@@ -27,6 +27,19 @@ Branching narrative word processor built with SvelteKit, TipTap, and DaisyUI. De
 - Unit test files live next to their source (e.g. `tree.test.ts` beside `tree.ts`)
 - Themes defined in `src/lib/themes.ts` and applied via DaisyUI plugin in `layout.css`
 
+## Schema Versioning & Migrations
+
+`StoryTree` has a `schemaVersion: number` field. Any change to the shape of `StoryTree` or `StoryNode` that is not backwards-compatible requires a migration.
+
+- `CURRENT_SCHEMA_VERSION` is defined in `src/lib/models/story.ts`
+- Migration functions live in `src/lib/persistence/migrations.ts`
+- `loadStory` and `listStories` in `indexeddb.ts` automatically migrate stale saves on load and re-save them
+
+**When changing the data schema:**
+1. Increment `CURRENT_SCHEMA_VERSION` in `story.ts`
+2. Add a migration function to the `migrations` map in `migrations.ts` keyed by the new version number — the function receives the raw data object and should mutate it in place
+3. The migration from version N-1 → N runs automatically for any user whose save predates the change
+
 ## Commands
 
 - `npm run dev` — Start dev server
