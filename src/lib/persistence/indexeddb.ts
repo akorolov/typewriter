@@ -1,5 +1,6 @@
 import { openDB, type IDBPDatabase } from 'idb';
 import type { StoryTree } from '../models/story.js';
+import { migrateStory } from './migrations.js';
 
 const DB_NAME = 'typewriter';
 const DB_VERSION = 1;
@@ -34,7 +35,11 @@ export async function saveStory(story: StoryTree): Promise<void> {
 
 export async function loadStory(id: string): Promise<StoryTree | undefined> {
 	const db = await getDb();
-	return db.get(STORE_NAME, id);
+	const raw = await db.get(STORE_NAME, id);
+	if (!raw) return undefined;
+	const { story, migrated } = migrateStory(raw);
+	if (migrated) await db.put(STORE_NAME, story);
+	return story;
 }
 
 export async function deleteStory(id: string): Promise<void> {
@@ -44,6 +49,12 @@ export async function deleteStory(id: string): Promise<void> {
 
 export async function listStories(): Promise<StoryTree[]> {
 	const db = await getDb();
-	const stories = await db.getAllFromIndex(STORE_NAME, 'by-updated');
-	return stories.reverse(); // Most recently updated first
+	const raws = await db.getAllFromIndex(STORE_NAME, 'by-updated');
+	const results: StoryTree[] = [];
+	for (const raw of raws) {
+		const { story, migrated } = migrateStory(raw);
+		if (migrated) await db.put(STORE_NAME, story);
+		results.push(story);
+	}
+	return results.reverse(); // Most recently updated first
 }

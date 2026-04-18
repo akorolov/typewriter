@@ -10,6 +10,7 @@ function makeTree(overrides: Partial<StoryTree> = {}): StoryTree {
 		nodes: {},
 		createdAt: 0,
 		updatedAt: 0,
+		schemaVersion: 1,
 		...overrides
 	};
 }

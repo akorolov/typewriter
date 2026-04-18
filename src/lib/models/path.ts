@@ -1,4 +1,4 @@
-import type { BranchSelections, StoryTree } from './story.js';
+import type { BranchSelections, StoryNode, StoryTree } from './story.js';
 
 /**
  * Returns all selectable choices at a node: real children + merge children.
@@ -25,7 +25,7 @@ export function resolvePath(tree: StoryTree, selections: BranchSelections): stri
 		if (visited.has(currentId)) break; // cycle guard
 		visited.add(currentId);
 
-		const node = tree.nodes[currentId];
+		const node: StoryNode = tree.nodes[currentId];
 		if (!node) break;
 
 		path.push(currentId);
@@ -34,7 +34,7 @@ export function resolvePath(tree: StoryTree, selections: BranchSelections): stri
 		if (choices.length === 0) break;
 
 		// Use selection if available, otherwise default to first child
-		const selected = selections[currentId];
+		const selected: string | undefined = selections[currentId];
 		if (selected && choices.includes(selected)) {
 			currentId = selected;
 		} else {

@@ -1,5 +1,7 @@
 import type { JSONContent } from '@tiptap/core';
 
+export const CURRENT_SCHEMA_VERSION = 1;
+
 export interface StoryNode {
 	id: string;
 	parentId: string | null;
@@ -20,6 +22,7 @@ export interface StoryTree {
 	nodes: Record<string, StoryNode>;
 	createdAt: number;
 	updatedAt: number;
+	schemaVersion: number;
 }
 
 /**

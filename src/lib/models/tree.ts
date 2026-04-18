@@ -1,5 +1,6 @@
 import type { JSONContent } from '@tiptap/core';
 import type { StoryNode, StoryTree } from './story.js';
+import { CURRENT_SCHEMA_VERSION } from './story.js';
 import { createId } from '../utils/id.js';
 
 /**
@@ -24,7 +25,8 @@ export function createStoryTree(title: string): StoryTree {
 		rootNodeId: rootId,
 		nodes: { [rootId]: root },
 		createdAt: now,
-		updatedAt: now
+		updatedAt: now,
+		schemaVersion: CURRENT_SCHEMA_VERSION
 	};
 }
 

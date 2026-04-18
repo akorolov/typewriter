@@ -47,6 +47,7 @@ Planned features:
 - [ ] Dark mode, other themes
 - [ ] Automatic exports (for backup purposes)
 - [x] Open up minimap into a bigger view
+- [ ] Add markers/placeholders/bookmarks
 
 ## FAQ
 
