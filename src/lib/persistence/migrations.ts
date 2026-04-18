@@ -23,7 +23,10 @@ const migrations: Record<number, (data: Record<string, unknown>) => void> = {
 		if (Object.keys(edges).length > 0) {
 			data.edges = edges;
 		}
-	}
+	},
+
+	// v2 → v3: variables field added to StoryTree (optional, absent on old saves — no-op)
+	3: (_data) => {}
 };
 
 export function migrateStory(raw: unknown): { story: StoryTree; migrated: boolean } {

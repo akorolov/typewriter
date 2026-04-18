@@ -7,6 +7,9 @@ import Image from '@tiptap/extension-image';
 import Typography from '@tiptap/extension-typography';
 import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
+import { VariableMention, type SuggestionState } from './VariableMention.js';
+
+export type { SuggestionState };
 
 export interface CreateEditorOptions {
 	content: JSONContent;
@@ -14,11 +17,21 @@ export interface CreateEditorOptions {
 	onFocus?: (editor: Editor) => void;
 	placeholder?: string;
 	editable?: boolean;
+	onSuggestionChange?: (state: SuggestionState | null) => void;
+	onSuggestionKeyDown?: (event: KeyboardEvent) => boolean;
 }
 
 export function createEditor(
 	element: HTMLElement,
-	{ content, onUpdate, onFocus, placeholder, editable = true }: CreateEditorOptions
+	{
+		content,
+		onUpdate,
+		onFocus,
+		placeholder,
+		editable = true,
+		onSuggestionChange,
+		onSuggestionKeyDown
+	}: CreateEditorOptions
 ): Editor {
 	return new Editor({
 		element,
@@ -38,7 +51,11 @@ export function createEditor(
 			Placeholder.configure({
 				placeholder: placeholder ?? 'Start writing...'
 			}),
-			CharacterCount
+			CharacterCount,
+			VariableMention.configure({
+				onSuggestionChange: onSuggestionChange ?? (() => {}),
+				onKeyDown: onSuggestionKeyDown ?? (() => false)
+			})
 		],
 		onUpdate: ({ editor }) => {
 			onUpdate(editor.getJSON());

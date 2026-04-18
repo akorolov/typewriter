@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
 	import type { JSONContent } from '@tiptap/core';
+	import type { VariableEffect } from '../models/story.js';
 	import { getAllChoices } from '../models/path.js';
 
 	interface Props {
@@ -64,6 +65,29 @@
 		if (!isSelected) {
 			store.selectBranch(forkParentId, childId);
 		}
+	}
+
+	const variableNames = $derived(Object.keys(store.tree.variables ?? {}));
+
+	function addEffect(parentId: string, childId: string) {
+		const first = variableNames[0];
+		if (!first) return;
+		const effects = store.getEdgeVariableEffects(parentId, childId);
+		store.updateEdgeVariableEffects(parentId, childId, [
+			...effects,
+			{ variableName: first, value: '' }
+		]);
+	}
+
+	function updateEffect(parentId: string, childId: string, index: number, patch: Partial<VariableEffect>) {
+		const effects = [...store.getEdgeVariableEffects(parentId, childId)];
+		effects[index] = { ...effects[index], ...patch };
+		store.updateEdgeVariableEffects(parentId, childId, effects);
+	}
+
+	function removeEffect(parentId: string, childId: string, index: number) {
+		const effects = store.getEdgeVariableEffects(parentId, childId).filter((_, i) => i !== index);
+		store.updateEdgeVariableEffects(parentId, childId, effects);
 	}
 </script>
 
@@ -133,6 +157,64 @@
 								onkeydown={(e) => e.stopPropagation()}
 							/>
 						</div>
+
+						{#if variableNames.length > 0}
+							{@const effects = store.getEdgeVariableEffects(fork.parentId, childId)}
+							<div class="mt-2 pl-4">
+								<div class="mb-1 text-[9px] font-semibold uppercase tracking-wider text-base-content/40">Variable effects</div>
+								{#each effects as effect, idx (idx)}
+									<div class="mb-1 flex items-center gap-1">
+										<select
+											class="effect-select"
+											value={effect.variableName}
+											onchange={(e) => { updateEffect(fork.parentId, childId, idx, { variableName: e.currentTarget.value }); e.stopPropagation(); }}
+											onclick={(e) => e.stopPropagation()}
+										>
+											{#each variableNames as vname (vname)}
+												<option value={vname}>${vname}</option>
+											{/each}
+										</select>
+										<span class="text-[9px] text-base-content/30">=</span>
+										{#if store.tree.variables?.[effect.variableName]?.type === 'boolean'}
+											<select
+												class="effect-select flex-1"
+												value={String(effect.value)}
+												onchange={(e) => { updateEffect(fork.parentId, childId, idx, { value: e.currentTarget.value === 'true' }); e.stopPropagation(); }}
+												onclick={(e) => e.stopPropagation()}
+											>
+												<option value="false">false</option>
+												<option value="true">true</option>
+											</select>
+										{:else}
+											<input
+												type="text"
+												class="effect-input flex-1"
+												class:field-selected={isSelected}
+												class:field-other={!isSelected}
+												value={String(effect.value)}
+												placeholder={store.tree.variables?.[effect.variableName]?.type === 'number' ? '0 or $var + 1' : 'value'}
+												oninput={(e) => updateEffect(fork.parentId, childId, idx, { value: e.currentTarget.value })}
+												onclick={(e) => e.stopPropagation()}
+												onkeydown={(e) => e.stopPropagation()}
+											/>
+										{/if}
+										<button
+											class="shrink-0 text-base-content/30 hover:text-error"
+											onclick={(e) => { removeEffect(fork.parentId, childId, idx); e.stopPropagation(); }}
+											title="Remove effect"
+										>
+											<span class="material-symbols-outlined" style="font-size:12px;">close</span>
+										</button>
+									</div>
+								{/each}
+								<button
+									class="mt-0.5 text-[9px] text-base-content/30 hover:text-primary"
+									onclick={(e) => { addEffect(fork.parentId, childId); e.stopPropagation(); }}
+									onkeydown={(e) => e.stopPropagation()}
+								>+ add effect</button>
+							</div>
+						{/if}
+
 						{#if !isSelected}
 							<div class="mt-1.5 pl-4 text-[9px] text-base-content/30">Click to navigate</div>
 						{/if}
@@ -192,5 +274,28 @@
 	.field::placeholder {
 		color: oklch(from var(--color-base-content) l c h / 0.25);
 		font-style: italic;
+	}
+
+	.effect-select {
+		background: oklch(from var(--color-base-200) l c h);
+		border: 1px solid oklch(from var(--color-base-300) l c h);
+		border-radius: 3px;
+		font-size: 0.65rem;
+		padding: 1px 3px;
+		outline: none;
+		max-width: 90px;
+	}
+
+	.effect-input {
+		background: transparent;
+		border: none;
+		border-bottom: 1px solid oklch(from var(--color-base-300) l c h);
+		outline: none;
+		font-size: 0.65rem;
+		padding: 1px 0;
+	}
+
+	.effect-input:focus {
+		border-bottom-color: oklch(from var(--color-primary) l c h);
 	}
 </style>

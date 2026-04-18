@@ -8,6 +8,8 @@
 	import StoryMapModal from './StoryMapModal.svelte';
 	import BranchInfo from './BranchInfo.svelte';
 	import Outline from './Outline.svelte';
+	import Variables from './Variables.svelte';
+	import FindReplace from './FindReplace.svelte';
 
 	interface Props {
 		store: StoryStore;
@@ -18,12 +20,14 @@
 	const sidebarTabs = [
 		{ id: 'map', label: 'Story Map', icon: 'map' },
 		{ id: 'branch', label: 'Branch Info', icon: 'account_tree' },
-		{ id: 'outline', label: 'Outline', icon: 'toc' }
+		{ id: 'outline', label: 'Outline', icon: 'toc' },
+		{ id: 'variables', label: 'Variables', icon: 'attach_money' }
 	] as const;
 	type SidebarTabId = (typeof sidebarTabs)[number]['id'];
 
 	let minimapOpen = $state(true);
 	let sidebarTab = $state<SidebarTabId>('map');
+	let findReplaceOpen = $state(false);
 	const activeTab = $derived(sidebarTabs.find((t) => t.id === sidebarTab)!);
 	let highlightNodeId = $state<string | null>(null);
 	let mergeSourceId = $state<string | null>(null);
@@ -137,6 +141,12 @@
 			e.preventDefault();
 			store.forceSave();
 		}
+
+		// Ctrl/Cmd+H: find & replace
+		if ((e.ctrlKey || e.metaKey) && e.key === 'h') {
+			e.preventDefault();
+			findReplaceOpen = true;
+		}
 	}
 </script>
 
@@ -201,6 +211,8 @@
 							<Minimap {store} {mergeSourceId} onmergetarget={handleMergeTarget} oncancelmerge={handleCancelMerge} />
 						{:else if sidebarTab === 'branch'}
 							<BranchInfo {store} bind:highlightNodeId />
+						{:else if sidebarTab === 'variables'}
+							<Variables {store} onnavigatetonode={(id) => store.setActiveNode(id)} />
 						{:else}
 							<Outline {store} {focusedNodeId} />
 						{/if}
@@ -226,5 +238,13 @@
 		onmergetarget={handleMergeTarget}
 		oncancelmerge={handleCancelMerge}
 		onclose={() => (mapModalOpen = false)}
+	/>
+{/if}
+
+{#if findReplaceOpen}
+	<FindReplace
+		tree={store.tree}
+		onreplace={(nodeId, content) => store.updateContent(nodeId, content)}
+		onclose={() => (findReplaceOpen = false)}
 	/>
 {/if}

@@ -32,6 +32,7 @@ function inlineToHarlowe(node: JSONContent): string {
 	}
 	if (node.type === 'hardBreak') return '\n';
 	if (node.type === 'image') return '';
+	if (node.type === 'variableMention') return `$${node.attrs?.name ?? ''}`;
 	return (node.content ?? []).map(inlineToHarlowe).join('');
 }
 
@@ -135,6 +136,18 @@ function buildPassageNames(tree: StoryTree): Map<string, string> {
 	return names;
 }
 
+function harloweValue(value: string | number | boolean, isNumber = false): string {
+	if (typeof value === 'boolean') return value ? 'true' : 'false';
+	// Number-type variables: emit the value raw so expressions like $x + 1 work
+	if (isNumber || typeof value === 'number') return String(value);
+	return `"${String(value).replace(/"/g, '\\"')}"`;
+}
+
+function harloweSetMacro(variableName: string, value: string | number | boolean, tree: StoryTree): string {
+	const isNumber = tree.variables?.[variableName]?.type === 'number';
+	return `(set: $${variableName} to ${harloweValue(value, isNumber)})`;
+}
+
 /**
  * Exports a StoryTree as a Twee 3 string suitable for importing into Twine.
  * Each node becomes one Harlowe passage. Linear continuations (single child)
@@ -160,6 +173,13 @@ export function exportToTwee(tree: StoryTree): string {
 			})
 	);
 
+	// StoryInit: initialize all variables to their defaults
+	const vars = Object.values(tree.variables ?? {});
+	if (vars.length > 0) {
+		const inits = vars.map((v) => harloweSetMacro(v.name, v.defaultValue, tree)).join('\n');
+		parts.push(`:: StoryInit [startup]\n${inits}`);
+	}
+
 	// One passage per node
 	for (const [id, node] of Object.entries(tree.nodes)) {
 		const name = names.get(id)!;
@@ -170,13 +190,27 @@ export function exportToTwee(tree: StoryTree): string {
 
 		if (allChoices.length === 1) {
 			// Linear continuation: transparent forward link
-			links.push(`[[${names.get(allChoices[0])!}]]`);
+			const childId = allChoices[0];
+			const effects = getEdge(tree, id, childId)?.variableEffects ?? [];
+			if (effects.length > 0) {
+				const setMacros = effects.map((e) => harloweSetMacro(e.variableName, e.value, tree)).join('');
+				links.push(`${setMacros}[[${names.get(childId)!}]]`);
+			} else {
+				links.push(`[[${names.get(childId)!}]]`);
+			}
 		} else {
 			// Choice fork: one link per branch (real children + merge children)
 			for (const childId of allChoices) {
 				const childName = names.get(childId)!;
-				const linkText = getEdge(tree, id, childId)?.choiceText?.trim() || childName;
-				links.push(`[[${linkText}->${childName}]]`);
+				const edge = getEdge(tree, id, childId);
+				const linkText = edge?.choiceText?.trim() || childName;
+				const effects = edge?.variableEffects ?? [];
+				if (effects.length > 0) {
+					const setMacros = effects.map((e) => harloweSetMacro(e.variableName, e.value, tree)).join('');
+					links.push(`(link: "${linkText}")[${setMacros}(go-to: "${childName}")]`);
+				} else {
+					links.push(`[[${linkText}->${childName}]]`);
+				}
 			}
 		}
 

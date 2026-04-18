@@ -88,6 +88,7 @@
 				onupdate={(content) => handleUpdate(nodeId, content)}
 				onfocus={(editor) => oneditorfocus?.(nodeId, editor)}
 				placeholder={i === 0 ? 'Begin your story...' : 'Continue writing...'}
+				variables={Object.keys(store.tree.variables ?? {})}
 			/>
 		</div>
 	{/each}

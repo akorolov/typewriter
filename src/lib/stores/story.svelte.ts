@@ -1,5 +1,5 @@
 import type { JSONContent } from '@tiptap/core';
-import type { BranchSelections, StoryTree } from '../models/story.js';
+import type { BranchSelections, StoryTree, VariableDef, VariableEffect } from '../models/story.js';
 import { resolvePath, switchBranch, switchBranchByDirection } from '../models/path.js';
 import { createStoryTree, splitNode, addBranch, deleteBranch, updateNodeContent, addMergeChild, removeMergeChild, getEdge, setEdge } from '../models/tree.js';
 import { saveStory } from '../persistence/indexeddb.js';
@@ -151,6 +151,33 @@ export function createStoryStore(initial?: StoryTree) {
 		return saveStory($state.snapshot(tree) as StoryTree);
 	}
 
+	function addVariable(def: VariableDef) {
+		if (!tree.variables) tree.variables = {};
+		tree.variables[def.name] = def;
+		debouncedSave(tree);
+	}
+
+	function updateVariable(name: string, patch: Partial<Omit<VariableDef, 'name'>>) {
+		if (!tree.variables?.[name]) return;
+		Object.assign(tree.variables[name], patch);
+		debouncedSave(tree);
+	}
+
+	function deleteVariable(name: string) {
+		if (!tree.variables) return;
+		delete tree.variables[name];
+		debouncedSave(tree);
+	}
+
+	function updateEdgeVariableEffects(parentId: string, childId: string, effects: VariableEffect[]) {
+		setEdge(tree, parentId, childId, { variableEffects: effects });
+		debouncedSave(tree);
+	}
+
+	function getEdgeVariableEffects(parentId: string, childId: string): VariableEffect[] {
+		return getEdge(tree, parentId, childId)?.variableEffects ?? [];
+	}
+
 	return {
 		get tree() { return tree; },
 		get selections() { return selections; },
@@ -171,7 +198,12 @@ export function createStoryStore(initial?: StoryTree) {
 		getEdgeChoiceText,
 		mergeBranch,
 		clearMergeChild,
-		forceSave
+		forceSave,
+		addVariable,
+		updateVariable,
+		deleteVariable,
+		updateEdgeVariableEffects,
+		getEdgeVariableEffects
 	};
 }
 

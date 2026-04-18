@@ -20,6 +20,7 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 - Various UI improvements
 - Added full story export to markdown, with hyperlinks
 - Fixed up some issues with merged branches not displaying properly or working as expected
+- Added basic variable functionality
 
 ### v0.2.2 (2026-04-14)
 - Export current branch as markdown
@@ -39,7 +40,7 @@ Planned features:
 - [x] Export to Twine for build and deployment
 - [ ] Potentially: export to renpy as well, although renpy has a different interactive fiction ethos. 
 - [x] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
-- [ ] First round of UI improvements
+- [x] First round of UI improvements
 - [ ] Adding help hints, a tutorial, other onboarding
 - [x] Let branches recombine
     - [x] Almost done, but currently there's a bug where you can't switch branches nicely between a merged branch and a regular branch in the editor (but you can in the minimap).
@@ -53,7 +54,8 @@ Planned features:
 - [ ] Automatic exports (for backup purposes)
 - [x] Open up minimap into a bigger view
 - [ ] Add markers/placeholders/bookmarks
-- [ ] Fix: merged branches don't show up in the branch info tab
+- [x] Fix: merged branches don't show up in the branch info tab
+- [ ] Allow conditionals to be attached to branch choices
 
 ## FAQ
 
