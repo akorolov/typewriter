@@ -20,7 +20,8 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 - Various UI improvements
 - Added full story export to markdown, with hyperlinks
 - Fixed up some issues with merged branches not displaying properly or working as expected
-- Added basic variable functionality
+- Added variable functionality
+- Added a help page
 
 ### v0.2.2 (2026-04-14)
 - Export current branch as markdown
@@ -42,10 +43,12 @@ Planned features:
 - [x] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
 - [x] First round of UI improvements
 - [ ] Adding help hints, a tutorial, other onboarding
+    - [x] Help page
+    - [ ] Onboarding tutorial
 - [x] Let branches recombine
     - [x] Almost done, but currently there's a bug where you can't switch branches nicely between a merged branch and a regular branch in the editor (but you can in the minimap).
     - [x] Also need to add in the functionality to switch to a branch path by clicking the pathway, i.e. so that you can open up the merged path 
-- [ ] Update how the player choice option works so that different nodes that lead to the same branch can have different player choices. 
+- [x] Update how the player choice option works so that different nodes that lead to the same branch can have different player choices. 
 - [x] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
 - [ ] Templates/reusable blocks
 - [x] Table of contents
