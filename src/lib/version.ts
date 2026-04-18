@@ -1,4 +1,4 @@
-export const VERSION = '0.2.2';
+export const VERSION = '0.3.0';
 
 export interface ChangelogEntry {
 	version: string;
@@ -7,6 +7,17 @@ export interface ChangelogEntry {
 }
 
 export const changelog: ChangelogEntry[] = [
+	{
+		version: '0.3.0',
+		date: '2026-04-18',
+		changes: [
+			'Various UI improvements',
+			'Added full story export to markdown, with hyperlinks',
+			'Fixed up some issues with merged branches not displaying properly or working as expected',
+			'Added basic variable functionality',
+			'Added a help page'
+		]
+	},
 	{
 		version: '0.2.2',
 		date: '2026-04-14',
