@@ -1,7 +1,7 @@
 import type { JSONContent } from '@tiptap/core';
 import type { BranchSelections, StoryTree } from '../models/story.js';
 import { resolvePath, switchBranch, switchBranchByDirection } from '../models/path.js';
-import { createStoryTree, splitNode, addBranch, deleteBranch, updateNodeContent, addMergeChild, removeMergeChild } from '../models/tree.js';
+import { createStoryTree, splitNode, addBranch, deleteBranch, updateNodeContent, addMergeChild, removeMergeChild, getEdge, setEdge } from '../models/tree.js';
 import { saveStory } from '../persistence/indexeddb.js';
 
 let saveTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -126,13 +126,13 @@ export function createStoryStore(initial?: StoryTree) {
 		}
 	}
 
-	function updateNodeChoiceText(nodeId: string, choiceText: string) {
-		const node = tree.nodes[nodeId];
-		if (node) {
-			node.choiceText = choiceText;
-			node.updatedAt = Date.now();
-			debouncedSave(tree);
-		}
+	function updateEdgeChoiceText(parentId: string, childId: string, choiceText: string) {
+		setEdge(tree, parentId, childId, { choiceText });
+		debouncedSave(tree);
+	}
+
+	function getEdgeChoiceText(parentId: string, childId: string): string | undefined {
+		return getEdge(tree, parentId, childId)?.choiceText;
 	}
 
 	function mergeBranch(nodeId: string, targetId: string): boolean {
@@ -167,7 +167,8 @@ export function createStoryStore(initial?: StoryTree) {
 		switchDirection,
 		updateTitle,
 		updateNodeLabel,
-		updateNodeChoiceText,
+		updateEdgeChoiceText,
+		getEdgeChoiceText,
 		mergeBranch,
 		clearMergeChild,
 		forceSave

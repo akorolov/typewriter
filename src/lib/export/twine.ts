@@ -1,6 +1,7 @@
 import type { JSONContent } from '@tiptap/core';
 import type { BranchSelections, StoryTree } from '../models/story.js';
 import { resolvePath } from '../models/path.js';
+import { getEdge } from '../models/tree.js';
 
 type Mark = { type: string; attrs?: Record<string, unknown> };
 
@@ -173,9 +174,8 @@ export function exportToTwee(tree: StoryTree): string {
 		} else {
 			// Choice fork: one link per branch (real children + merge children)
 			for (const childId of allChoices) {
-				const child = tree.nodes[childId];
 				const childName = names.get(childId)!;
-				const linkText = child.choiceText?.trim() || childName;
+				const linkText = getEdge(tree, id, childId)?.choiceText?.trim() || childName;
 				links.push(`[[${linkText}->${childName}]]`);
 			}
 		}
@@ -293,8 +293,7 @@ export function exportToMarkdownAll(tree: StoryTree): string {
 		const allChoices = [...node.childIds, ...(node.mergeChildIds ?? [])];
 		if (allChoices.length > 1) {
 			const choiceLines = allChoices.map((childId) => {
-				const child = tree.nodes[childId];
-				const linkText = child?.choiceText?.trim() || headingMap.get(childId) || childId;
+				const linkText = getEdge(tree, nodeId, childId)?.choiceText?.trim() || headingMap.get(childId) || childId;
 				return `> - [${linkText}](#${anchors.get(childId)})`;
 			});
 			parts.push(`> **Choose your path:**\n${choiceLines.join('\n')}`);

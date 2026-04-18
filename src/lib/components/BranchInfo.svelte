@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { StoryStore } from '../stores/story.svelte.js';
 	import type { JSONContent } from '@tiptap/core';
+	import { getAllChoices } from '../models/path.js';
 
 	interface Props {
 		store: StoryStore;
@@ -23,21 +24,23 @@
 		}, 0)
 	);
 
-	// For each fork along the current path, collect { parentId, selectedChildId }
+	// For each fork along the current path, collect { parentId, selectedChildId }.
+	// Walk consecutive pairs so merge-child jumps are detected correctly — a merge
+	// child's structural parentId differs from the navigation parent in the path.
 	const forks = $derived.by(() => {
 		const result: Array<{ parentId: string; selectedChildId: string; parentPreview: string }> = [];
 		const seen = new Set<string>();
 
-		for (const nodeId of store.path) {
-			const node = store.tree.nodes[nodeId];
-			if (node.parentId && !seen.has(node.parentId)) {
-				const parent = store.tree.nodes[node.parentId];
-				if (parent.childIds.length > 1) {
-					seen.add(node.parentId);
-					const raw = extractText(parent.content).trim();
-					const parentPreview = raw.length > 30 ? '…' + raw.slice(-30) : raw || '(start)';
-					result.push({ parentId: node.parentId, selectedChildId: nodeId, parentPreview });
-				}
+		for (let i = 0; i < store.path.length - 1; i++) {
+			const parentId = store.path[i];
+			const childId = store.path[i + 1];
+			if (seen.has(parentId)) continue;
+			if (getAllChoices(store.tree, parentId).length > 1) {
+				seen.add(parentId);
+				const parent = store.tree.nodes[parentId];
+				const raw = extractText(parent.content).trim();
+				const parentPreview = raw.length > 30 ? '…' + raw.slice(-30) : raw || '(start)';
+				result.push({ parentId, selectedChildId: childId, parentPreview });
 			}
 		}
 		return result;
@@ -82,7 +85,7 @@
 					after "{fork.parentPreview}"
 				</div>
 
-				{#each store.tree.nodes[fork.parentId].childIds as childId, j (childId)}
+				{#each getAllChoices(store.tree, fork.parentId) as childId, j (childId)}
 					{@const node = store.tree.nodes[childId]}
 					{@const isSelected = childId === fork.selectedChildId}
 					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
@@ -123,9 +126,9 @@
 								class="field w-full"
 								class:field-selected={isSelected}
 								class:field-other={!isSelected}
-								value={node.choiceText ?? ''}
+								value={store.getEdgeChoiceText(fork.parentId, childId) ?? ''}
 								placeholder="Enter choice text…"
-								oninput={(e) => store.updateNodeChoiceText(childId, e.currentTarget.value)}
+								oninput={(e) => store.updateEdgeChoiceText(fork.parentId, childId, e.currentTarget.value)}
 								onclick={(e) => e.stopPropagation()}
 								onkeydown={(e) => e.stopPropagation()}
 							/>

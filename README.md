@@ -1,6 +1,6 @@
 # typewriter
 
-**Current version: 0.2.2**
+**Current version: 0.3.0**
 
 An editor for creating branching narrative games. Try it out at typewriter.akorl.xyz
 
@@ -17,8 +17,9 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 ## Recent Changes
 
 ### v0.3.0 (2026-04-18)
-- Updated the sidebar UI
+- Various UI improvements
 - Added full story export to markdown, with hyperlinks
+- Fixed up some issues with merged branches not displaying properly or working as expected
 
 ### v0.2.2 (2026-04-14)
 - Export current branch as markdown
@@ -52,6 +53,7 @@ Planned features:
 - [ ] Automatic exports (for backup purposes)
 - [x] Open up minimap into a bigger view
 - [ ] Add markers/placeholders/bookmarks
+- [ ] Fix: merged branches don't show up in the branch info tab
 
 ## FAQ
 

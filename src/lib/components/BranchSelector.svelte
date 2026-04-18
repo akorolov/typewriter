@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { StoryTree, BranchSelections } from '../models/story.js';
 	import { getAllChoices, getSelectedIndex } from '../models/path.js';
+	import { getEdge } from '../models/tree.js';
 
 	interface Props {
 		tree: StoryTree;
@@ -126,7 +127,7 @@
 					/>
 				{:else}
 					<button
-						class="branch-tab inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-medium transition-all {node.choiceText && !mergePoint ? 'tooltip tooltip-bottom' : ''}"
+						class="branch-tab inline-flex items-center gap-1 rounded-full px-3 py-0.5 text-xs font-medium transition-all {getEdge(tree, parentId, childId)?.choiceText && !mergePoint ? 'tooltip tooltip-bottom' : ''}"
 						class:branch-tab-active={isSelected && !mergePoint && !isMergeChild}
 						class:branch-tab-inactive={!isSelected && !mergePoint && !isMergeChild}
 						class:branch-tab-merge-active={isSelected && (mergePoint || isMergeChild)}
@@ -134,7 +135,7 @@
 						disabled={mergePoint}
 						onclick={() => !mergePoint && onselectbranch(parentId, childId)}
 						oncontextmenu={(e) => !mergePoint && handleContextMenu(e, childId, i)}
-						data-tip={!mergePoint ? (node.choiceText || undefined) : undefined}
+						data-tip={!mergePoint ? (getEdge(tree, parentId, childId)?.choiceText || undefined) : undefined}
 						title={isMergeChild ? `↩ ${node.label ?? 'Merge'}` : (node.label ?? `Branch ${i + 1}`)}
 					>
 						{#if isMergeChild}

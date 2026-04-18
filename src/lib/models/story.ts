@@ -1,6 +1,10 @@
 import type { JSONContent } from '@tiptap/core';
 
-export const CURRENT_SCHEMA_VERSION = 1;
+export const CURRENT_SCHEMA_VERSION = 2;
+
+export interface ChoiceEdge {
+	choiceText?: string;
+}
 
 export interface StoryNode {
 	id: string;
@@ -8,7 +12,6 @@ export interface StoryNode {
 	childIds: string[];
 	content: JSONContent;
 	label?: string;
-	choiceText?: string;
 	/** IDs of existing nodes elsewhere in the tree offered as branch choices (merge-back links). */
 	mergeChildIds?: string[];
 	createdAt: number;
@@ -20,6 +23,8 @@ export interface StoryTree {
 	title: string;
 	rootNodeId: string;
 	nodes: Record<string, StoryNode>;
+	/** Per-edge metadata keyed by "${parentId}:${childId}". */
+	edges?: Record<string, ChoiceEdge>;
 	createdAt: number;
 	updatedAt: number;
 	schemaVersion: number;

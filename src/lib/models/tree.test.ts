@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createStoryTree, createNode, splitNode, addBranch, deleteBranch, collectDescendants, updateNodeContent, addMergeChild, removeMergeChild } from './tree.js';
+import { createStoryTree, createNode, splitNode, addBranch, deleteBranch, collectDescendants, updateNodeContent, addMergeChild, removeMergeChild, getEdge, setEdge } from './tree.js';
 
 describe('createStoryTree', () => {
 	it('creates a tree with a single root node', () => {
@@ -285,6 +285,115 @@ describe('deleteBranch (merge child cleanup)', () => {
 		deleteBranch(tree, a.id);
 
 		expect(tree.nodes[b.id].mergeChildIds).toBeUndefined();
+	});
+});
+
+describe('getEdge / setEdge', () => {
+	it('returns undefined for an edge with no data', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId);
+		expect(getEdge(tree, tree.rootNodeId, a.id)).toBeUndefined();
+	});
+
+	it('sets and reads back choice text on an edge', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId);
+		setEdge(tree, tree.rootNodeId, a.id, { choiceText: 'Go left' });
+		expect(getEdge(tree, tree.rootNodeId, a.id)?.choiceText).toBe('Go left');
+	});
+
+	it('allows two different parents to have different choice texts for the same target node', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const shared = createNode(tree, a.id, undefined, 'Shared');
+		addMergeChild(tree, b.id, shared.id);
+
+		setEdge(tree, a.id, shared.id, { choiceText: 'From A: visit shared' });
+		setEdge(tree, b.id, shared.id, { choiceText: 'From B: visit shared' });
+
+		expect(getEdge(tree, a.id, shared.id)?.choiceText).toBe('From A: visit shared');
+		expect(getEdge(tree, b.id, shared.id)?.choiceText).toBe('From B: visit shared');
+	});
+
+	it('overwrites only the fields passed to setEdge', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId);
+		setEdge(tree, tree.rootNodeId, a.id, { choiceText: 'Original' });
+		setEdge(tree, tree.rootNodeId, a.id, { choiceText: 'Updated' });
+		expect(getEdge(tree, tree.rootNodeId, a.id)?.choiceText).toBe('Updated');
+	});
+});
+
+describe('deleteBranch (edge cleanup)', () => {
+	it('removes edges where the deleted node is the child', () => {
+		// 3 children so deleting one does not trigger a collapse
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		createNode(tree, tree.rootNodeId, undefined, 'C');
+		setEdge(tree, tree.rootNodeId, a.id, { choiceText: 'Go to A' });
+		setEdge(tree, tree.rootNodeId, b.id, { choiceText: 'Go to B' });
+
+		deleteBranch(tree, a.id);
+
+		expect(getEdge(tree, tree.rootNodeId, a.id)).toBeUndefined();
+		expect(getEdge(tree, tree.rootNodeId, b.id)?.choiceText).toBe('Go to B');
+	});
+
+	it('removes edges where a deleted node is the parent', () => {
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const a1 = createNode(tree, a.id, undefined, 'A1');
+		createNode(tree, a.id, undefined, 'A2');
+		setEdge(tree, a.id, a1.id, { choiceText: 'Down to A1' });
+
+		deleteBranch(tree, a.id);
+
+		expect(getEdge(tree, a.id, a1.id)).toBeUndefined();
+	});
+
+	it('moves edges from collapsed child to parent when fork collapses', () => {
+		// root → [a, b], b → b1; delete a → fork collapses, b merges into root, b1 re-parented to root
+		// edge b:b1 should become root:b1
+		const tree = createStoryTree('Test');
+		const a = createNode(tree, tree.rootNodeId, undefined, 'A');
+		const b = createNode(tree, tree.rootNodeId, undefined, 'B');
+		const b1 = createNode(tree, b.id, undefined, 'B1');
+		setEdge(tree, b.id, b1.id, { choiceText: 'Continue' });
+
+		deleteBranch(tree, a.id);
+
+		// b was merged into root, b1 is now root's child
+		expect(getEdge(tree, tree.rootNodeId, b1.id)?.choiceText).toBe('Continue');
+		expect(getEdge(tree, b.id, b1.id)).toBeUndefined();
+	});
+});
+
+describe('splitNode (edge migration)', () => {
+	it('moves edges from original node to continuation when children are reparented', () => {
+		const tree = createStoryTree('Test');
+		const child = createNode(tree, tree.rootNodeId, undefined, 'Child');
+		setEdge(tree, tree.rootNodeId, child.id, { choiceText: 'Go to child' });
+
+		const { continuationId } = splitNode(tree, tree.rootNodeId, 0);
+
+		// child was reparented to continuation; edge should follow
+		expect(getEdge(tree, continuationId, child.id)?.choiceText).toBe('Go to child');
+		// old edge on original node should be gone
+		expect(getEdge(tree, tree.rootNodeId, child.id)).toBeUndefined();
+	});
+
+	it('does not move edges for the newly created continuation and branch nodes', () => {
+		const tree = createStoryTree('Test');
+		setEdge(tree, tree.rootNodeId, 'some-other', { choiceText: 'Unrelated' });
+
+		const { continuationId, branchId } = splitNode(tree, tree.rootNodeId, 0);
+
+		// No spurious edges created for the new continuation/branch nodes
+		expect(getEdge(tree, tree.rootNodeId, continuationId)).toBeUndefined();
+		expect(getEdge(tree, tree.rootNodeId, branchId)).toBeUndefined();
 	});
 });
 

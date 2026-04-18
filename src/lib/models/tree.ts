@@ -1,7 +1,28 @@
 import type { JSONContent } from '@tiptap/core';
-import type { StoryNode, StoryTree } from './story.js';
+import type { ChoiceEdge, StoryNode, StoryTree } from './story.js';
 import { CURRENT_SCHEMA_VERSION } from './story.js';
 import { createId } from '../utils/id.js';
+
+export function edgeKey(parentId: string, childId: string): string {
+	return `${parentId}:${childId}`;
+}
+
+export function getEdge(tree: StoryTree, parentId: string, childId: string): ChoiceEdge | undefined {
+	return tree.edges?.[edgeKey(parentId, childId)];
+}
+
+export function setEdge(tree: StoryTree, parentId: string, childId: string, update: Partial<ChoiceEdge>): void {
+	if (!tree.edges) tree.edges = {};
+	const key = edgeKey(parentId, childId);
+	tree.edges[key] = { ...tree.edges[key], ...update };
+	tree.updatedAt = Date.now();
+}
+
+export function deleteEdge(tree: StoryTree, parentId: string, childId: string): void {
+	if (!tree.edges) return;
+	delete tree.edges[edgeKey(parentId, childId)];
+	if (Object.keys(tree.edges).length === 0) delete tree.edges;
+}
 
 /**
  * Creates a new empty story tree with a single root node.
@@ -81,10 +102,11 @@ export function splitNode(
 		const continuation = createNode(tree, nodeId, undefined, node.label ? `${node.label} (continued)` : undefined);
 		const branch = createNode(tree, nodeId, undefined, 'New branch');
 
-		// Move existing children to continuation
+		// Move existing children to continuation and migrate their edges
 		for (const childId of node.childIds.filter((id) => id !== continuation.id && id !== branch.id)) {
 			tree.nodes[childId].parentId = continuation.id;
 			continuation.childIds.push(childId);
+			migrateEdge(tree, nodeId, continuation.id, childId);
 		}
 		node.childIds = [continuation.id, branch.id];
 
@@ -114,10 +136,11 @@ export function splitNode(
 	// Create empty branch
 	const branch = createNode(tree, nodeId, undefined, 'New branch');
 
-	// Move existing children to continuation
+	// Move existing children to continuation and migrate their edges
 	for (const childId of node.childIds.filter((id) => id !== continuation.id && id !== branch.id)) {
 		tree.nodes[childId].parentId = continuation.id;
 		continuation.childIds.push(childId);
+		migrateEdge(tree, nodeId, continuation.id, childId);
 	}
 
 	// Update original node
@@ -169,13 +192,20 @@ export function deleteBranch(tree: StoryTree, nodeId: string): boolean {
 		delete tree.nodes[id];
 	}
 
-	// Clear any mergeChildIds references that pointed to deleted nodes
+	// Clear any mergeChildIds references and edges that pointed to deleted nodes
 	const deletedSet = new Set(toDelete);
 	for (const surviving of Object.values(tree.nodes)) {
 		if (surviving.mergeChildIds) {
 			surviving.mergeChildIds = surviving.mergeChildIds.filter((id) => !deletedSet.has(id));
 			if (surviving.mergeChildIds.length === 0) delete surviving.mergeChildIds;
 		}
+	}
+	if (tree.edges) {
+		for (const key of Object.keys(tree.edges)) {
+			const [p, c] = key.split(':');
+			if (deletedSet.has(p) || deletedSet.has(c)) delete tree.edges[key];
+		}
+		if (Object.keys(tree.edges).length === 0) delete tree.edges;
 	}
 
 	// If parent now has exactly one child, collapse it into the parent
@@ -188,12 +218,15 @@ export function deleteBranch(tree: StoryTree, nodeId: string): boolean {
 		const childParagraphs = child.content.content ?? [];
 		parent.content = { type: 'doc', content: [...parentParagraphs, ...childParagraphs] };
 
-		// Re-parent grandchildren to parent
+		// Re-parent grandchildren to parent and migrate their edges
 		for (const grandchildId of child.childIds) {
 			tree.nodes[grandchildId].parentId = parent.id;
+			migrateEdge(tree, remainingChildId, parent.id, grandchildId);
 		}
 		parent.childIds = child.childIds;
 
+		// Remove the edge from parent to the collapsed child
+		deleteEdge(tree, parent.id, remainingChildId);
 		delete tree.nodes[remainingChildId];
 	}
 
@@ -258,6 +291,17 @@ export function removeMergeChild(tree: StoryTree, nodeId: string, targetId: stri
 	if (node.mergeChildIds.length === 0) delete node.mergeChildIds;
 	node.updatedAt = Date.now();
 	tree.updatedAt = Date.now();
+}
+
+/**
+ * Moves an edge from one parent to another (used when reparenting children).
+ */
+function migrateEdge(tree: StoryTree, fromParent: string, toParent: string, childId: string): void {
+	const existing = getEdge(tree, fromParent, childId);
+	if (existing) {
+		deleteEdge(tree, fromParent, childId);
+		setEdge(tree, toParent, childId, existing);
+	}
 }
 
 /**
