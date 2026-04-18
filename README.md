@@ -16,6 +16,10 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 
 ## Recent Changes
 
+### v0.3.0 (2026-04-18)
+- Updated the sidebar UI
+- Added full story export to markdown, with hyperlinks
+
 ### v0.2.2 (2026-04-14)
 - Export current branch as markdown
 - Expanded story map view
@@ -33,7 +37,7 @@ This is not a tool to build and deploy interactive fiction games. It is a tool f
 Planned features:
 - [x] Export to Twine for build and deployment
 - [ ] Potentially: export to renpy as well, although renpy has a different interactive fiction ethos. 
-- [ ] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
+- [x] Export to standard markdown, text files, and json. Planned exports will also include a way to just export a complete single path as a markdown file, as well as other paths. Potentially also find a way to export into a format that you could turn into a print document nicely. 
 - [ ] First round of UI improvements
 - [ ] Adding help hints, a tutorial, other onboarding
 - [x] Let branches recombine
@@ -43,7 +47,7 @@ Planned features:
 - [ ] Add something to track and set variables, ability to reference variables in the narrative without breaking the writing flow
 - [ ] Templates/reusable blocks
 - [x] Table of contents
-- [ ] Make outline look better/clean up sidebar
+- [x] Make outline look better/clean up sidebar
 - [ ] Dark mode, other themes
 - [ ] Automatic exports (for backup purposes)
 - [x] Open up minimap into a bigger view

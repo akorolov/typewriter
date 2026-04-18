@@ -219,6 +219,107 @@ export function downloadJson(tree: StoryTree): void {
 	URL.revokeObjectURL(url);
 }
 
+// --- Markdown export (full tree, anchored sections) ---
+
+function slugify(text: string): string {
+	return text
+		.toLowerCase()
+		.replace(/[^\w\s-]/g, '')
+		.trim()
+		.replace(/\s+/g, '-');
+}
+
+function buildSectionAnchors(headings: Map<string, string>): Map<string, string> {
+	const anchors = new Map<string, string>();
+	const used = new Set<string>();
+
+	for (const [id, heading] of headings) {
+		const base = slugify(heading) || id;
+		let anchor = base;
+		let n = 1;
+		while (used.has(anchor)) {
+			anchor = `${base}-${n++}`;
+		}
+		anchors.set(id, anchor);
+		used.add(anchor);
+	}
+
+	return anchors;
+}
+
+/**
+ * Exports the full story tree as a single Markdown document with anchored sections.
+ * Each node is a ## heading; fork points show choice links; linear continuations flow naturally.
+ */
+export function exportToMarkdownAll(tree: StoryTree): string {
+	// Build headings in BFS order so numbered fallbacks are stable
+	const headingMap = new Map<string, string>();
+	let unnamed = 0;
+	const bfsOrder: string[] = [];
+	const visited = new Set<string>();
+	const queue = [tree.rootNodeId];
+
+	while (queue.length > 0) {
+		const nodeId = queue.shift()!;
+		if (visited.has(nodeId)) continue;
+		visited.add(nodeId);
+		bfsOrder.push(nodeId);
+
+		const node = tree.nodes[nodeId];
+		if (!node) continue;
+
+		const heading =
+			node.label?.trim() || (nodeId === tree.rootNodeId ? 'Opening' : `Section ${++unnamed}`);
+		headingMap.set(nodeId, heading);
+
+		for (const childId of node.childIds) queue.push(childId);
+	}
+
+	const anchors = buildSectionAnchors(headingMap);
+	const parts: string[] = [`# ${tree.title}`];
+
+	for (const nodeId of bfsOrder) {
+		const node = tree.nodes[nodeId];
+		if (!node) continue;
+
+		const heading = headingMap.get(nodeId)!;
+		const anchor = anchors.get(nodeId)!;
+
+		parts.push(`<a id="${anchor}"></a>\n\n## ${heading}`);
+
+		const content = blockToMarkdown(node.content).trim();
+		if (content) parts.push(content);
+
+		const allChoices = [...node.childIds, ...(node.mergeChildIds ?? [])];
+		if (allChoices.length > 1) {
+			const choiceLines = allChoices.map((childId) => {
+				const child = tree.nodes[childId];
+				const linkText = child?.choiceText?.trim() || headingMap.get(childId) || childId;
+				return `> - [${linkText}](#${anchors.get(childId)})`;
+			});
+			parts.push(`> **Choose your path:**\n${choiceLines.join('\n')}`);
+		}
+
+		parts.push('---');
+	}
+
+	return parts.join('\n\n');
+}
+
+/**
+ * Triggers a browser download of the full story as a .md file.
+ */
+export function downloadMarkdownAll(tree: StoryTree): void {
+	const content = exportToMarkdownAll(tree);
+	const blob = new Blob([content], { type: 'text/markdown' });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = `${storyFilename(tree.title)}.md`;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
 // --- Markdown export (current branch) ---
 
 function inlineToMarkdown(node: JSONContent): string {

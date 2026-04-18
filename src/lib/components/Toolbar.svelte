@@ -7,12 +7,13 @@
 		onexport: () => void;
 		onexportjson: () => void;
 		onexportmarkdown: () => void;
+		onexportmarkdownall: () => void;
 		title: string;
 		onupdatetitle: (title: string) => void;
 		wordCount: number;
 	}
 
-	let { editor, onbranch, onexport, onexportjson, onexportmarkdown, title, onupdatetitle, wordCount }: Props = $props();
+	let { editor, onbranch, onexport, onexportjson, onexportmarkdown, onexportmarkdownall, title, onupdatetitle, wordCount }: Props = $props();
 
 	function toggleFormat(command: string) {
 		if (!editor) return;
@@ -154,7 +155,7 @@
 			Export
 		</button>
 		<ul
-			class="dropdown-content menu bg-base-100 rounded-box z-10 w-44 p-1 shadow-md border border-base-300 text-sm"
+			class="dropdown-content menu bg-base-100 rounded-box z-10 w-56 p-1 shadow-md border border-base-300 text-sm"
 		>
 			<li>
 				<button
@@ -170,12 +171,12 @@
 			<li>
 				<button
 					onclick={() => {
-						onexportmarkdown();
+						onexportmarkdownall();
 						(document.activeElement as HTMLElement)?.blur();
 					}}
 				>
 					<span class="material-symbols-outlined" style="font-size: 15px;">download</span>
-					Export Current Branch
+					Markdown
 				</button>
 			</li>
 			<li>
@@ -187,6 +188,18 @@
 				>
 					<span class="material-symbols-outlined" style="font-size: 15px;">download</span>
 					Raw JSON
+				</button>
+			</li>
+			<li class="my-1 border-t border-base-content/20"></li>
+			<li>
+				<button
+					onclick={() => {
+						onexportmarkdown();
+						(document.activeElement as HTMLElement)?.blur();
+					}}
+				>
+					<span class="material-symbols-outlined" style="font-size: 15px;">download</span>
+					Export current branch (.md)
 				</button>
 			</li>
 		</ul>
